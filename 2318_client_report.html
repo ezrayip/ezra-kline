@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2318.HK 中國平安 · 個股研究報告</title>
+<style>
+  :root {
+    --bg:        #f4f4f2;
+    --card-bg:   #ffffff;
+    --ink:       #141d2b;
+    --body:      #474f5c;
+    --muted:     #8a93a1;
+    --line:      #e7e6e2;
+    --line-2:    #f1f0ec;
+    --accent:    #2f4b7c;   /* 單一靛藍結構色 */
+    --accent-bg: #eef1f7;
+    --good:      #1f9d57;   /* 看好 / 綠（信號語義） */
+    --good-bg:   #eaf6ee;
+    --watch:     #c8881a;   /* 觀望 / 琥珀（信號語義） */
+    --watch-bg:  #fbf2e0;
+    --cautious:  #d64545;   /* 審慎 / 紅（信號語義） */
+    --cautious-bg:#fbecec;
+    --up:        #1f9d57;   /* 升 = 綠（國際慣例） */
+    --up-bg:     #eaf6ee;
+    --down:      #d64545;   /* 跌 = 紅（國際慣例） */
+    --down-bg:   #fbecec;
+    --slate:     #aeb6c2;
+    --radius:    12px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: "PingFang HK", "PingFang SC", "Noto Sans HK", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--body);
+    padding: 48px 40px 56px; max-width: 920px; margin: 0 auto;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; line-height: 1.62;
+  }
+  .eyebrow { font-size:.68rem; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--accent); margin-bottom:9px; }
+  .masthead { display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+    padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:26px; }
+  .report-title { font-size:1.9rem; font-weight:700; letter-spacing:-.5px; color:var(--ink); line-height:1.1; }
+  .report-sub { font-size:.86rem; color:var(--muted); margin-top:7px; font-weight:500; letter-spacing:.3px; }
+  .mh-right { text-align:right; flex-shrink:0; }
+  .price { font-size:2.05rem; font-weight:700; letter-spacing:-.8px; line-height:1; color:var(--ink); font-variant-numeric: tabular-nums; }
+  .price .ccy { font-size:.82rem; font-weight:600; color:var(--muted); margin-right:3px; letter-spacing:0; }
+  .change { display:inline-flex; align-items:center; gap:3px; font-size:.84rem; font-weight:600;
+    margin-top:9px; font-variant-numeric: tabular-nums; }
+  .change.up { color: var(--up); }
+  .change.down { color: var(--down); }
+  .asof { font-size:.72rem; color:var(--muted); margin-top:8px; font-weight:500; }
+
+  .card { position: relative; background: var(--card-bg); border:1px solid var(--line);
+    border-top:3px solid var(--accent); border-radius: var(--radius);
+    padding: 24px 26px 26px; margin-bottom: 24px; }
+  .card.good     { border-top-color: var(--good); }
+  .card.cautious { border-top-color: var(--cautious); }
+  .card.watch    { border-top-color: var(--watch); }
+
+  /* 頂部＝倒三角結論先行區（重設計）：tinted editorial 面板 + 判定大字 + 評分 + 信號 + 摘要 + 核心論點/主要風險 */
+  .card-head { display:flex; flex-direction:column; gap:0;
+    padding:22px 26px 24px; margin-bottom:24px; border-radius:var(--radius-sm);
+    background:var(--card-bg); border:1px solid var(--line); border-left:3px solid var(--accent); }
+  .card-head.good { border-left-color:var(--good); }
+  .card-head.watch { border-left-color:var(--watch); }
+  .card-head.cautious { border-left-color:var(--cautious); }
+  /* 層1：判定 + 評分 */
+  .head-verdict { display:flex; align-items:baseline; gap:14px; padding-bottom:16px; }
+  .hv-word { font-size:1.4rem; font-weight:800; letter-spacing:.3px; line-height:1; }
+  .hv-word.good { color:var(--good); }
+  .hv-word.watch { color:#9a6b00; }
+  .hv-word.cautious { color:var(--cautious); }
+  .hv-score { font-size:.8rem; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:.2px; }
+  .hv-score b { font-weight:800; font-size:.94rem; }
+  /* 層2：信號條（full width 左對齊，同判定色呼應分隔線） */
+  .head-sigs { display:flex; align-items:center; flex-wrap:wrap; gap:10px 30px; white-space:nowrap;
+    margin-bottom:15px; padding-top:15px; border-top:1px solid var(--line); }
+  .head-summary { font-size:.97rem; line-height:1.68; color:var(--ink); max-width:68ch; margin-bottom:16px; }
+  .head-points { display:grid; grid-template-columns:1fr 1fr; gap:16px 28px; margin-top:0;
+    padding-top:16px; border-top:1px solid var(--line); }
+  .head-point { display:flex; flex-direction:column; gap:7px; }
+  .hp-label { display:flex; align-items:center; gap:8px; font-size:.72rem; font-weight:700;
+    letter-spacing:1.2px; text-transform:uppercase; color:var(--ink); }
+  .hp-label::before { content:""; width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .hp-thesis .hp-label::before { background:var(--accent); }
+  .hp-risk .hp-label::before { background:var(--cautious); }
+  .head-close { display:flex; gap:12px; align-items:baseline; margin-top:16px;
+    padding:13px 15px; border-radius:var(--radius-sm); background:var(--line-2);
+    border-left:3px solid var(--accent); border-top:1px solid var(--line); }
+  .card-head.good .head-close { border-left-color:var(--good); }
+  .card-head.watch .head-close { border-left-color:var(--watch); }
+  .card-head.cautious .head-close { border-left-color:var(--cautious); }
+  .hc-label { flex-shrink:0; font-size:.7rem; font-weight:800; letter-spacing:1.2px;
+    text-transform:uppercase; color:var(--accent); white-space:nowrap; }
+  .card-head.good .hc-label { color:var(--good); }
+  .card-head.watch .hc-label { color:var(--watch); }
+  .card-head.cautious .hc-label { color:var(--cautious); }
+  .hc-txt { font-size:.86rem; line-height:1.65; color:var(--ink); }
+  .hp-txt { font-size:.83rem; line-height:1.72; color:var(--body); }
+  /* 層5：投資視窗（短期 / 中長線）horizon split */
+  .head-horizon { margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+  .hz-title { font-size:.7rem; font-weight:800; letter-spacing:1.2px; text-transform:uppercase;
+    color:var(--accent); margin-bottom:10px; }
+  .card-head.good .hz-title { color:var(--good); }
+  .card-head.watch .hz-title { color:var(--watch); }
+  .card-head.cautious .hz-title { color:var(--cautious); }
+  .hz-row { display:flex; gap:12px; align-items:baseline; padding:9px 13px; border-radius:var(--radius-sm);
+    background:var(--line-2); border-left:3px solid var(--watch); margin-bottom:8px; }
+  .hz-row.hz-good { border-left-color:var(--good); }
+  .hz-row.hz-cautious { border-left-color:var(--cautious); }
+  .hz-label { flex-shrink:0; font-size:.74rem; font-weight:800; letter-spacing:.5px; white-space:nowrap; }
+  .hz-row.hz-good .hz-label { color:var(--good); }
+  .hz-row.hz-watch .hz-label { color:var(--watch); }
+  .hz-row.hz-cautious .hz-label { color:var(--cautious); }
+  .hz-txt { font-size:.86rem; line-height:1.62; color:var(--ink); }
+  .sigs-label { font-size:.62rem; font-weight:700; letter-spacing:1.4px; text-transform:uppercase;
+    color:var(--muted); margin-right:2px; align-self:center; }
+  .sig { display:inline-flex; align-items:center; gap:7px; font-size:.8rem; color:var(--body); white-space:nowrap; }
+  .sig .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; display:inline-block; }
+  .sig.good .dot { background:var(--good); }
+  .sig.watch .dot { background:var(--watch); }
+  .sig.cautious .dot { background:var(--cautious); }
+  .sig .lab { font-weight:600; }
+  .sig .meter { display:inline-flex; gap:2px; align-items:center; }
+  .sig .sig-seg { width:5px; height:9px; border-radius:2px; background:var(--line); flex-shrink:0; }
+  .sig .sig-seg.on.good { background:var(--good); }
+  .sig .sig-seg.on.watch { background:var(--watch); }
+  .sig .sig-seg.on.cautious { background:var(--cautious); }
+  .sig .st { font-weight:700; }
+  .sig .st.good { color:var(--good); }
+  .sig .st.watch { color:#9a6b00; }
+  .sig .st.cautious { color:var(--cautious); }
+
+  .card-cols { display:grid; grid-template-columns:1fr 1fr; gap:0 34px; }
+  .col { display:flex; flex-direction:column; }
+
+  .section { border-top:1px solid var(--line-2); padding-top:16px; margin-top:16px; }
+  .section:first-child { border-top:none; padding-top:0; margin-top:0; }
+  .section-label { font-size:.7rem; font-weight:700; color:var(--accent); letter-spacing:1.4px;
+    text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:9px; }
+  .section-label::before { content:""; width:18px; height:2px; border-radius:2px; background:var(--accent); }
+  .section-label.sub { margin-top:20px; padding-top:18px; border-top:1px solid var(--line); }
+  .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px 18px; }
+  .kv { display:flex; justify-content:space-between; align-items:baseline; font-size:.82rem; line-height:1.6; }
+  .kv .k { color:var(--muted); flex-shrink:0; }
+  .kv .v { color:var(--body); font-weight:600; text-align:right; font-variant-numeric:tabular-nums; margin-left:10px; }
+  .kv .v.hl-up { color:var(--up); }
+  .kv .v.hl-down { color:var(--down); }
+  .peer-cmp { margin-top:8px; }
+  .pcmp { display:grid; grid-template-columns:1.5fr 58px 1.7fr; align-items:center;
+    gap:10px; padding:9px 2px; border-bottom:1px solid var(--line); }
+  .pcmp:last-child { border-bottom:none; }
+  .pcmp-nm { font-size:.79rem; color:var(--body); font-variant-numeric:tabular-nums;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pcmp-val { font-size:.79rem; font-weight:600; color:var(--body); text-align:right;
+    font-variant-numeric:tabular-nums; }
+  .pcmp-bar { height:7px; background:var(--line-2); border-radius:4px; overflow:hidden; }
+  .pcmp-fill { height:100%; border-radius:4px; background:var(--slate); }
+  .pcmp.self { padding-left:9px; border-left:3px solid var(--accent); margin-left:-12px; }
+  .pcmp.self .pcmp-nm { color:var(--accent); font-weight:700; }
+  .pcmp.self .pcmp-val { color:var(--accent); }
+  .pcmp.self .pcmp-fill { background:var(--accent); }
+  .pcmp.peer-avg { background:#e9e8e3; border-radius:6px; border-bottom:none;
+    margin-top:6px; }
+  .pcmp.peer-avg .pcmp-nm { color:var(--muted); font-weight:700; }
+  .pcmp.peer-avg .pcmp-val { color:var(--ink); font-weight:700; }
+
+  .range-track { position:relative; height:6px; background:#ecebe7; border-radius:4px; margin:7px 0 9px; }
+  .range-fill { position:absolute; left:0; top:0; bottom:0; background:var(--slate); border-radius:4px; opacity:.6; }
+  .range-ends { display:flex; justify-content:space-between; font-size:.72rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .range-pct { font-weight:700; color:var(--ink); }
+
+  .levels { display:flex; flex-direction:column; gap:11px; }
+  .lv { display:grid; grid-template-columns:max-content 1fr; align-items:baseline; gap:12px; font-size:.82rem; }
+  .lv-k { font-weight:600; color:var(--muted); flex-shrink:0; }
+  .lv-v { font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .lv-v.hl-up { color:var(--up); }
+  .lv-v.hl-down { color:var(--down); }
+
+  .catalyst { display:flex; flex-direction:column; gap:9px; }
+  .cat-item { display:flex; align-items:baseline; gap:9px; font-size:.82rem; line-height:1.5; color:var(--body); }
+  .cat-dot { color:var(--accent); font-weight:700; }
+
+  .multidim-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px 28px; }
+  .md-item { display:flex; gap:10px; align-items:flex-start; }
+  .md-dot { width:8px; height:8px; border-radius:50%; margin-top:7px; flex-shrink:0; }
+  .md-dot.good { background:var(--good); }
+  .md-dot.cautious { background:var(--cautious); }
+  .md-dot.watch { background:var(--watch); }
+  .md-name { font-weight:700; font-size:.8rem; color:var(--ink); margin-bottom:3px; }
+  .md-note { font-size:.76rem; color:var(--body); line-height:1.5; }
+
+  /* 結論先行區已上移頂部 .card-head（倒三角），底部結論卡 CSS 停用 */
+
+  .chart-card { background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 26px 24px; margin-bottom:24px; }
+  .chart-title { font-size:.86rem; font-weight:700; color:var(--ink); letter-spacing:.3px; margin-bottom:4px; }
+  .chart-sub { font-size:.72rem; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+  .chart-svg { display:block; width:100%; height:auto; }
+  .chart-legend { display:flex; flex-wrap:wrap; gap:16px; margin-top:12px; font-size:.73rem; color:var(--body); }
+  .chart-legend .lg { display:inline-flex; align-items:center; gap:7px; }
+  .chart-legend i { width:14px; height:3px; border-radius:2px; display:inline-block; }
+
+  /* 底部「論點與風險」block 已上移頂部 .head-points，相關 CSS 停用 */
+
+  .page-footer { margin-top:30px; text-align:center; font-size:.7rem; color:var(--muted); line-height:1.9;
+    padding:18px 0 0; border-top:1px solid var(--line); }
+
+  @media print {
+    @page { size: 210mm auto; margin: 10mm 12mm; }
+    html, body { background:#fff !important; width:auto !important; max-width:none !important; }
+    body { padding:0; }
+    .card, .chart-card, .card-head, .chart-svg, .head-points, .head-point,
+    .kv-grid, .multidim-full, .multidim-item, .capital-card, .col { break-inside:avoid; }
+    .chart-svg { width:100% !important; height:auto !important; }
+  }
+  @media (max-width: 720px) {
+    .card-cols { grid-template-columns:1fr; }
+    .multidim-grid { grid-template-columns:1fr; }
+    .head-points { grid-template-columns:1fr; }
+    body { padding:20px 16px; }
+    .head-sigs { gap:6px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="mh-left">
+    <div class="eyebrow">客戶參考 · 個股深度分析</div>
+    <div class="report-title">個股研究報告</div>
+    <div class="report-sub">2318.HK · 中國平安</div>
+  </div>
+  <div class="mh-right">
+    <div class="price"><span class="ccy">HKD</span>55.0</div>
+    <div class="change up"><span class="arrow">▲</span>+1.7%</div>
+    <div class="asof">截至 2026-08-21 早段 HKT</div>
+  </div>
+</div>
+
+
+<div class="chart-card">
+  <div class="chart-title">價格走勢（實時日 K 線 · 260 日 + MA20/60/200，升綠跌紅）</div>
+  <img class="chart-svg" alt="K線圖" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/2318_kline.png"/>
+  <div class="chart-legend"><span class="lg"><i style="background:#1f9d57"></i>陽線（升）</span><span class="lg"><i style="background:#d64545"></i>陰線（跌）</span><span class="lg"><i style="background:#2f4b7c"></i>MA20 56.5</span><span class="lg"><i style="background:#c8881a"></i>MA60 55.6</span><span class="lg"><i style="background:#8a93a1"></i>MA200 —</span></div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-title">當日資金淨流向</div>
+  <div class="chart-sub">分時淨流入／流出（相對值）；綠柱為淨流入、紅柱為淨流出。</div>
+  <svg class="chart-svg" viewBox="0 0 720 150" width="100%" preserveAspectRatio="xMidYMid meet"><line x1="52" y1="69.0" x2="708" y2="69.0" stroke="#cfd4dc" stroke-width="1"/><rect x="78.2" y="48.4" width="78.7" height="20.6" fill="#1f9d57" fill-opacity="0.78"/><rect x="209.4" y="51.8" width="78.7" height="17.2" fill="#1f9d57" fill-opacity="0.78"/><rect x="340.6" y="14.0" width="78.7" height="55.0" fill="#1f9d57" fill-opacity="0.78"/><rect x="471.8" y="44.9" width="78.7" height="24.1" fill="#1f9d57" fill-opacity="0.78"/><rect x="603.0" y="27.8" width="78.7" height="41.2" fill="#1f9d57" fill-opacity="0.78"/><text x="46" y="18.0" text-anchor="end" font-size="9" fill="#8a93a1">+800</text><text x="46" y="128.0" text-anchor="end" font-size="9" fill="#8a93a1">-800</text><text x="117.6" y="142.0" text-anchor="middle" font-size="9" fill="#8a93a1">08-14</text><text x="248.8" y="142.0" text-anchor="middle" font-size="9" fill="#8a93a1">08-17</text><text x="380.0" y="142.0" text-anchor="middle" font-size="9" fill="#8a93a1">08-18</text><text x="511.2" y="142.0" text-anchor="middle" font-size="9" fill="#8a93a1">08-19</text><text x="642.4" y="142.0" text-anchor="middle" font-size="9" fill="#8a93a1">08-20</text></svg>
+</div>
+
+<div class="card watch">
+  <div class="card-cols">
+    <div class="col">
+      
+      <div class="section">
+        <div class="section-label">估值</div>
+        <div class="metric-grid">
+          <div class="kv"><span class="k">市盈率 (PE)</span><span class="v hl-up">6.5x</span></div>
+          <div class="kv"><span class="k">同業均值的 PE</span><span class="v">10.4x</span></div>
+          <div class="kv"><span class="k">市帳率 (PB)</span><span class="v">0.85x</span></div>
+          <div class="kv"><span class="k">共識目標價</span><span class="v">81.5</span></div>
+        </div>
+        <div class="section-label sub">同業 PE 對比</div>
+        <div class="peer-cmp"><div class="pcmp self"><div class="pcmp-nm">中國平安 (2318.HK)</div><div class="pcmp-val">6.5x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:5.0%"></div></div></div>
+<div class="pcmp peer"><div class="pcmp-nm">友邦保險 (1299.HK)</div><div class="pcmp-val">13.5x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:100.0%"></div></div></div>
+<div class="pcmp peer"><div class="pcmp-nm">中國人壽 (2628.HK)</div><div class="pcmp-val">8.2x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:31.8%"></div></div></div>
+<div class="pcmp peer"><div class="pcmp-nm">內險行業中位 (行業中位)</div><div class="pcmp-val">9.5x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:51.9%"></div></div></div><div class="pcmp peer-avg"><div class="pcmp-nm">同業 PE 均值</div><div class="pcmp-val">10.4x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:64.3%"></div></div></div></div>
+      </div>
+      
+      <div class="section">
+        <div class="section-label">技術走勢</div>
+        <div class="metric-grid">
+          <div class="kv"><span class="k">MA20</span><span class="v">56.5</span></div>
+          <div class="kv"><span class="k">MA60</span><span class="v">55.6</span></div>
+          <div class="kv"><span class="k">MA200</span><span class="v">—</span></div>
+          <div class="kv"><span class="k">52週低位</span><span class="v">50.5</span></div>
+          <div class="kv"><span class="k">52週高位</span><span class="v">71.0</span></div>
+        </div>
+        <div class="range-track"><div class="range-fill" style="width:22%"></div></div>
+        <div class="range-ends"><span>區間位置（52週）</span><span class="range-pct">22%</span></div>
+      </div>
+    </div>
+    <div class="col">
+      
+      <div class="section">
+        <div class="section-label">操作參考</div>
+        <div class="levels">
+          <div class="lv"><span class="lv-k">共識目標</span><span class="lv-v">券商共識目標均價 81.53（區間 59.16–99.63），摩通 95 / 滙豐 84 / 美銀 64.9 / 中金 99.4</span></div>
+          <div class="lv"><span class="lv-k">支持位</span><span class="lv-v">技術支持位約 53.2（8 月低位）/ 50.0（6 月雙底）</span></div>
+          <div class="lv"><span class="lv-k">吸納區</span><span class="lv-v">估值吸引區：回落至 50–53 分注吸納；P/EV 0.5x 已深度折讓</span></div>
+          <div class="lv"><span class="lv-k">現價 vs 共識</span><span class="lv-v hl-down">低於共識 33%</span></div>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-label">關鍵催化劑</div>
+        <div class="catalyst"><div class="cat-item"><span class="cat-dot">·</span><span>1H26 業績（8/20 收市後）：淨利 925.85 億 RMB +36.1% 勝預期、NBV +11.2%、中期息 0.98 RMB +3.2%</span></div><div class="cat-item"><span class="cat-dot">·</span><span>大行齊撐：摩通列內險 H 股首選目標 95、滙豐 84、美銀 64.9、中金 99.4，12 家均價 81.5、0 減持</span></div><div class="cat-item"><span class="cat-dot">·</span><span>內險中期股息驚喜預期（摩通料行業 +15%），平安息率 5.6% 行內最高</span></div><div class="cat-item"><span class="cat-dot">·</span><span>P/EV 0.5x 較歷史均值 1.0x 折讓一半，估值修復靠利率預期好轉 + 北水</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  
+      <div class="section multidim-full">
+        <div class="section-label">多維分析</div>
+        <div class="multidim-grid"><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">行業</div>
+            <div class="md-note">壽險屬週期性金融，中國利率長期下行壓抑利差；綜合金融+醫養生態提供防守，非結構衰退</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">量價</div>
+            <div class="md-note">業績日反彈至 55，但仍在 MA200（59.77）下、50<200 死叉、MACD 負；RSI 26.6 近超賣，短線有技術反彈條件，中線未轉強</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot good"></span>
+          <div class="md-text">
+            <div class="md-name">估值</div>
+            <div class="md-note">P/EV 0.5x 深度低估（修復至 1.0x ≈ 中金目標 99.4）、PE 6.5x、息率 5.6%；估值地板只喺有人買才成立</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot good"></span>
+          <div class="md-text">
+            <div class="md-name">基本面</div>
+            <div class="md-note">1H26 淨利 +36.1% 勝預期、NBV +11.2%、OPAT +8.3%；盈利含投資收益，Q3 股市波動或令增速回吐</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">行業基準</div>
+            <div class="md-note">內險 H 股 PEV 普遍 0.4–0.6x，平安 0.5x 唔算最平（國壽 0.49/新華 0.45），但綜合金融溢價合理，修復空間仍大</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">資金</div>
+            <div class="md-note">業績後成交增（8/18 成交 55.8M 股/30 億）；沽空比率此前 11.7%（8/3）仍偏高，淡倉未退</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">情緒</div>
+            <div class="md-note">券商 93–96% 買入、目標均價 81.5；散戶冷清，無情緒泡沫亦無逼空動能</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot good"></span>
+          <div class="md-text">
+            <div class="md-name">治理/資本</div>
+            <div class="md-note">淨債持續削減、ROE ~14%、資本充足；內部增持記錄顯示管理層對低估有信心</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">板塊輪動</div>
+            <div class="md-note">內險年初至今落後大市，估值修復靠利率預期轉向 + 北水；8/18 平安跌幅細過國壽/太保，屬板塊性回吐</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">盈利質素/資本運作</div>
+            <div class="md-note">分紅險轉型、NBV 利潤率 24.4%（-1.7ppt）；無大規模減持/配售疑慮；AI 投入降本增效</div>
+          </div>
+        </div></div>
+      </div>
+</div>
+
+<div class="card-head watch">
+  <div class="head-verdict"><span class="hv-word watch">觀望偏淡</span><span class="hv-score">綜合評分 <b>50</b></span></div>
+  <div class="head-sigs"><span class="sigs-label">信號</span><span class="sig sig-watch"><i class="dot"></i><span class="lab">技術</span><span class="meter"><i class="sig-seg on watch"></i><i class="sig-seg on watch"></i><i class="sig-seg"></i></span><span class="st st-watch">觀望</span></span><span class="sig sig-watch"><i class="dot"></i><span class="lab">資金</span><span class="meter"><i class="sig-seg on watch"></i><i class="sig-seg on watch"></i><i class="sig-seg"></i></span><span class="st st-watch">觀望</span></span><span class="sig sig-watch"><i class="dot"></i><span class="lab">衍生品</span><span class="meter"><i class="sig-seg on watch"></i><i class="sig-seg on watch"></i><i class="sig-seg"></i></span><span class="st st-watch">觀望</span></span><span class="sig sig-watch"><i class="dot"></i><span class="lab">情緒</span><span class="meter"><i class="sig-seg on watch"></i><i class="sig-seg on watch"></i><i class="sig-seg"></i></span><span class="st st-watch">觀望</span></span></div>
+  <div class="head-summary">估值極殘（P/EV 0.5x、PE 6.5x、息率 5.6%）+ 1H26 業績勝預期撐起深度價值，但技術仍處下跌軌（低於 MA200、死叉）、利率/宏觀逆風未消，不宜高追，宜回調分注</div>
+  <div class="head-points">
+    <div class="head-point hp-thesis"><div class="hp-label">核心論點</div><div class="hp-txt">中國平安係內險龍頭兼綜合金融集團，估值極殘（P/EV 0.5x、PE 6.5x、息率 5.6%），8/20 收市後公布 1H26 業績淨利 +36.1% 勝預期、NBV +11.2%，深度價值獲確認。惟股價仍低於 MA200（59.8）、50<200 死叉、MACD 負，技術未轉強；中國利率下行壓縮利差、霍爾木茲/通縮等宏觀逆風壓制內險投資端。綜合判斷為觀望偏淡，唔宜高追，宜回調 50–53 分注吸納、止蝕 50 以下，中長線核心息股底倉可留。</div></div>
+    <div class="head-point hp-risk"><div class="hp-label">主要風險</div><div class="hp-txt">利率/債息下行壓縮利差；霍爾木茲 70% 唔正常化→油價通脹→新興市場 risk-off；Q3 股市調整或令投資收益回吐（1H 已含投資貢獻）；估值地板依賴買盤，成交萎縮下易再探 50；技術死叉未破前，反彈當減磅機會多過追入。</div></div>
+  </div>
+  <div class="head-close"><span class="hc-label">總結</span><span class="hc-txt">深度價值 + 業績 beat 中長線吸引，但趨勢未轉強，操作上唔追、等回調、止蝕 50 以下</span></div>
+  <div class="head-horizon"><div class="hz-title">投資視窗（短期 / 中長線）</div><div class="hz-row hz-watch"><span class="hz-label">短期</span><span class="hz-txt">短期（1–4週）：技術未轉強，低於 MA200（59.77）、50<200 死叉、MACD 負；RSI 26.6 近超賣有技術反彈條件，但中線未轉強，宜等回調至 50–53 才分注，止蝕 50 以下</span></div><div class="hz-row hz-good"><span class="hz-label">中長線</span><span class="hz-txt">中長線（季以上）：估值極殘（P/EV 0.5x、PE 6.5x、息率 5.6%）+ 1H26 淨利 +36.1% beat，深度價值獲確認；回調分注核心息股底倉，目標睇券商共識均價 81.5</span></div></div>
+</div>
+
+<div class="page-footer">
+  本報告僅供參考，不構成投資建議。價格可升可跌，過往表現不代表將來表現。<br>
+  投資涉及風險，請根據自身風險承受能力作出獨立判斷。
+</div>
+
+<script>
+(function() {
+  var px = document.documentElement.scrollHeight;
+  var mm = Math.ceil(px / 3.7795275591) + 24; /* + 上下 margin buffer */
+  var st = document.createElement('style');
+  st.setAttribute('data-dynpage', '1');
+  st.textContent = '@page { size: 210mm ' + mm + 'mm; margin: 10mm 12mm; }';
+  document.head.appendChild(st);
+})();
+</script>
+
+</body>
+</html>
