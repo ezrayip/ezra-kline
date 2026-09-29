@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0941.HK 中國移動 · 個股研究報告</title>
+<style>
+  :root {
+    --bg:        #f4f4f2;
+    --card-bg:   #ffffff;
+    --ink:       #141d2b;
+    --body:      #474f5c;
+    --muted:     #8a93a1;
+    --line:      #e7e6e2;
+    --line-2:    #f1f0ec;
+    --accent:    #2f4b7c;   /* 單一靛藍結構色 */
+    --accent-bg: #eef1f7;
+    --good:      #1f9d57;   /* 看好 / 綠（信號語義） */
+    --good-bg:   #eaf6ee;
+    --watch:     #c8881a;   /* 觀望 / 琥珀（信號語義） */
+    --watch-bg:  #fbf2e0;
+    --cautious:  #d64545;   /* 審慎 / 紅（信號語義） */
+    --cautious-bg:#fbecec;
+    --up:        #1f9d57;   /* 升 = 綠（國際慣例） */
+    --up-bg:     #eaf6ee;
+    --down:      #d64545;   /* 跌 = 紅（國際慣例） */
+    --down-bg:   #fbecec;
+    --slate:     #aeb6c2;
+    --radius:    12px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: "PingFang HK", "PingFang SC", "Noto Sans HK", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--body);
+    padding: 48px 40px 56px; max-width: 920px; margin: 0 auto;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; line-height: 1.62;
+  }
+  .eyebrow { font-size:.68rem; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--accent); margin-bottom:9px; }
+  .masthead { display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+    padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:26px; }
+  .report-title { font-size:1.9rem; font-weight:700; letter-spacing:-.5px; color:var(--ink); line-height:1.1; }
+  .report-sub { font-size:.86rem; color:var(--muted); margin-top:7px; font-weight:500; letter-spacing:.3px; }
+  .mh-right { text-align:right; flex-shrink:0; }
+  .price { font-size:2.05rem; font-weight:700; letter-spacing:-.8px; line-height:1; color:var(--ink); font-variant-numeric: tabular-nums; }
+  .price .ccy { font-size:.82rem; font-weight:600; color:var(--muted); margin-right:3px; letter-spacing:0; }
+  .change { display:inline-flex; align-items:center; gap:3px; font-size:.84rem; font-weight:600;
+    margin-top:9px; font-variant-numeric: tabular-nums; }
+  .change.up { color: var(--up); }
+  .change.down { color: var(--down); }
+  .asof { font-size:.72rem; color:var(--muted); margin-top:8px; font-weight:500; }
+
+  .card { position: relative; background: var(--card-bg); border:1px solid var(--line);
+    border-top:3px solid var(--accent); border-radius: var(--radius);
+    padding: 24px 26px 26px; margin-bottom: 24px; }
+  .card.good     { border-top-color: var(--good); }
+  .card.cautious { border-top-color: var(--cautious); }
+  .card.watch    { border-top-color: var(--watch); }
+
+  /* 頂部＝倒三角結論先行區（重設計）：tinted editorial 面板 + 判定大字 + 評分 + 信號 + 摘要 + 核心論點/主要風險 */
+  .card-head { display:flex; flex-direction:column; gap:0;
+    padding:22px 26px 24px; margin-bottom:24px; border-radius:var(--radius-sm);
+    background:var(--card-bg); border:1px solid var(--line); border-left:3px solid var(--accent); }
+  .card-head.good { border-left-color:var(--good); }
+  .card-head.watch { border-left-color:var(--watch); }
+  .card-head.cautious { border-left-color:var(--cautious); }
+  /* 層1：判定 + 評分 */
+  .head-verdict { display:flex; align-items:baseline; gap:14px; padding-bottom:16px; }
+  .hv-word { font-size:1.4rem; font-weight:800; letter-spacing:.3px; line-height:1; }
+  .hv-word.good { color:var(--good); }
+  .hv-word.watch { color:#9a6b00; }
+  .hv-word.cautious { color:var(--cautious); }
+  .hv-score { font-size:.8rem; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:.2px; }
+  .hv-score b { font-weight:800; font-size:.94rem; }
+  /* 層2：信號條（full width 左對齊，同判定色呼應分隔線） */
+  .head-sigs { display:flex; align-items:center; flex-wrap:wrap; gap:10px 30px; white-space:nowrap;
+    margin-bottom:15px; padding-top:15px; border-top:1px solid var(--line); }
+  .head-summary { font-size:.97rem; line-height:1.68; color:var(--ink); max-width:68ch; margin-bottom:16px; }
+  .head-points { display:grid; grid-template-columns:1fr 1fr; gap:16px 28px; margin-top:0;
+    padding-top:16px; border-top:1px solid var(--line); }
+  .head-point { display:flex; flex-direction:column; gap:7px; }
+  .hp-label { display:flex; align-items:center; gap:8px; font-size:.72rem; font-weight:700;
+    letter-spacing:1.2px; text-transform:uppercase; color:var(--ink); }
+  .hp-label::before { content:""; width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .hp-thesis .hp-label::before { background:var(--accent); }
+  .hp-risk .hp-label::before { background:var(--cautious); }
+  .head-close { display:flex; gap:12px; align-items:baseline; margin-top:16px;
+    padding:13px 15px; border-radius:var(--radius-sm); background:var(--line-2);
+    border-left:3px solid var(--accent); border-top:1px solid var(--line); }
+  .card-head.good .head-close { border-left-color:var(--good); }
+  .card-head.watch .head-close { border-left-color:var(--watch); }
+  .card-head.cautious .head-close { border-left-color:var(--cautious); }
+  .hc-label { flex-shrink:0; font-size:.7rem; font-weight:800; letter-spacing:1.2px;
+    text-transform:uppercase; color:var(--accent); white-space:nowrap; }
+  .card-head.good .hc-label { color:var(--good); }
+  .card-head.watch .hc-label { color:var(--watch); }
+  .card-head.cautious .hc-label { color:var(--cautious); }
+  .hc-txt { font-size:.86rem; line-height:1.65; color:var(--ink); }
+  .hp-txt { font-size:.83rem; line-height:1.72; color:var(--body); }
+  /* 層5：投資視窗（短期 / 中長線）horizon split */
+  .head-horizon { margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+  .hz-title { font-size:.7rem; font-weight:800; letter-spacing:1.2px; text-transform:uppercase;
+    color:var(--accent); margin-bottom:10px; }
+  .card-head.good .hz-title { color:var(--good); }
+  .card-head.watch .hz-title { color:var(--watch); }
+  .card-head.cautious .hz-title { color:var(--cautious); }
+  .hz-row { display:flex; gap:12px; align-items:baseline; padding:9px 13px; border-radius:var(--radius-sm);
+    background:var(--line-2); border-left:3px solid var(--watch); margin-bottom:8px; }
+  .hz-row.hz-good { border-left-color:var(--good); }
+  .hz-row.hz-cautious { border-left-color:var(--cautious); }
+  .hz-label { flex-shrink:0; font-size:.74rem; font-weight:800; letter-spacing:.5px; white-space:nowrap; }
+  .hz-row.hz-good .hz-label { color:var(--good); }
+  .hz-row.hz-watch .hz-label { color:var(--watch); }
+  .hz-row.hz-cautious .hz-label { color:var(--cautious); }
+  .hz-txt { font-size:.86rem; line-height:1.62; color:var(--ink); }
+  .sigs-label { font-size:.62rem; font-weight:700; letter-spacing:1.4px; text-transform:uppercase;
+    color:var(--muted); margin-right:2px; align-self:center; }
+  .sig { display:inline-flex; align-items:center; gap:7px; font-size:.8rem; color:var(--body); white-space:nowrap; }
+  .sig .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; display:inline-block; }
+  .sig.good .dot { background:var(--good); }
+  .sig.watch .dot { background:var(--watch); }
+  .sig.cautious .dot { background:var(--cautious); }
+  .sig .lab { font-weight:600; }
+  .sig .meter { display:inline-flex; gap:2px; align-items:center; }
+  .sig .sig-seg { width:5px; height:9px; border-radius:2px; background:var(--line); flex-shrink:0; }
+  .sig .sig-seg.on.good { background:var(--good); }
+  .sig .sig-seg.on.watch { background:var(--watch); }
+  .sig .sig-seg.on.cautious { background:var(--cautious); }
+  .sig .st { font-weight:700; }
+  .sig .st.good { color:var(--good); }
+  .sig .st.watch { color:#9a6b00; }
+  .sig .st.cautious { color:var(--cautious); }
+
+  .card-cols { display:grid; grid-template-columns:1fr 1fr; gap:0 34px; }
+  .col { display:flex; flex-direction:column; }
+
+  .section { border-top:1px solid var(--line-2); padding-top:16px; margin-top:16px; }
+  .section:first-child { border-top:none; padding-top:0; margin-top:0; }
+  .section-label { font-size:.7rem; font-weight:700; color:var(--accent); letter-spacing:1.4px;
+    text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:9px; }
+  .section-label::before { content:""; width:18px; height:2px; border-radius:2px; background:var(--accent); }
+  .section-label.sub { margin-top:20px; padding-top:18px; border-top:1px solid var(--line); }
+  .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px 18px; }
+  .kv { display:flex; justify-content:space-between; align-items:baseline; font-size:.82rem; line-height:1.6; }
+  .kv .k { color:var(--muted); flex-shrink:0; }
+  .kv .v { color:var(--body); font-weight:600; text-align:right; font-variant-numeric:tabular-nums; margin-left:10px; }
+  .kv .v.hl-up { color:var(--up); }
+  .kv .v.hl-down { color:var(--down); }
+  .peer-cmp { margin-top:8px; }
+  .pcmp { display:grid; grid-template-columns:1.5fr 58px 1.7fr; align-items:center;
+    gap:10px; padding:9px 2px; border-bottom:1px solid var(--line); }
+  .pcmp:last-child { border-bottom:none; }
+  .pcmp-nm { font-size:.79rem; color:var(--body); font-variant-numeric:tabular-nums;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pcmp-val { font-size:.79rem; font-weight:600; color:var(--body); text-align:right;
+    font-variant-numeric:tabular-nums; }
+  .pcmp-bar { height:7px; background:var(--line-2); border-radius:4px; overflow:hidden; }
+  .pcmp-fill { height:100%; border-radius:4px; background:var(--slate); }
+  .pcmp.self { padding-left:9px; border-left:3px solid var(--accent); margin-left:-12px; }
+  .pcmp.self .pcmp-nm { color:var(--accent); font-weight:700; }
+  .pcmp.self .pcmp-val { color:var(--accent); }
+  .pcmp.self .pcmp-fill { background:var(--accent); }
+  .pcmp.peer-avg { background:#e9e8e3; border-radius:6px; border-bottom:none;
+    margin-top:6px; }
+  .pcmp.peer-avg .pcmp-nm { color:var(--muted); font-weight:700; }
+  .pcmp.peer-avg .pcmp-val { color:var(--ink); font-weight:700; }
+
+  .range-track { position:relative; height:6px; background:#ecebe7; border-radius:4px; margin:7px 0 9px; }
+  .range-fill { position:absolute; left:0; top:0; bottom:0; background:var(--slate); border-radius:4px; opacity:.6; }
+  .range-ends { display:flex; justify-content:space-between; font-size:.72rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .range-pct { font-weight:700; color:var(--ink); }
+
+  .levels { display:flex; flex-direction:column; gap:11px; }
+  .lv { display:grid; grid-template-columns:max-content 1fr; align-items:baseline; gap:12px; font-size:.82rem; }
+  .lv-k { font-weight:600; color:var(--muted); flex-shrink:0; }
+  .lv-v { font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .lv-v.hl-up { color:var(--up); }
+  .lv-v.hl-down { color:var(--down); }
+
+  .catalyst { display:flex; flex-direction:column; gap:9px; }
+  .cat-item { display:flex; align-items:baseline; gap:9px; font-size:.82rem; line-height:1.5; color:var(--body); }
+  .cat-dot { color:var(--accent); font-weight:700; }
+
+  .multidim-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px 28px; }
+  .md-item { display:flex; gap:10px; align-items:flex-start; }
+  .md-dot { width:8px; height:8px; border-radius:50%; margin-top:7px; flex-shrink:0; }
+  .md-dot.good { background:var(--good); }
+  .md-dot.cautious { background:var(--cautious); }
+  .md-dot.watch { background:var(--watch); }
+  .md-name { font-weight:700; font-size:.8rem; color:var(--ink); margin-bottom:3px; }
+  .md-note { font-size:.76rem; color:var(--body); line-height:1.5; }
+
+  /* 結論先行區已上移頂部 .card-head（倒三角），底部結論卡 CSS 停用 */
+
+  .chart-card { background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 26px 24px; margin-bottom:24px; }
+  .chart-title { font-size:.86rem; font-weight:700; color:var(--ink); letter-spacing:.3px; margin-bottom:4px; }
+  .chart-sub { font-size:.72rem; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+  .chart-svg { display:block; width:100%; height:auto; }
+  .chart-legend { display:flex; flex-wrap:wrap; gap:16px; margin-top:12px; font-size:.73rem; color:var(--body); }
+  .chart-legend .lg { display:inline-flex; align-items:center; gap:7px; }
+  .chart-legend i { width:14px; height:3px; border-radius:2px; display:inline-block; }
+
+  /* 底部「論點與風險」block 已上移頂部 .head-points，相關 CSS 停用 */
+
+  .page-footer { margin-top:30px; text-align:center; font-size:.7rem; color:var(--muted); line-height:1.9;
+    padding:18px 0 0; border-top:1px solid var(--line); }
+
+  @media print {
+    @page { size: 210mm auto; margin: 10mm 12mm; }
+    html, body { background:#fff !important; width:auto !important; max-width:none !important; }
+    body { padding:0; }
+    .card, .chart-card, .card-head, .chart-svg, .head-points, .head-point,
+    .kv-grid, .multidim-full, .multidim-item, .capital-card, .col { break-inside:avoid; }
+    .chart-svg { width:100% !important; height:auto !important; }
+  }
+  @media (max-width: 720px) {
+    .card-cols { grid-template-columns:1fr; }
+    .multidim-grid { grid-template-columns:1fr; }
+    .head-points { grid-template-columns:1fr; }
+    body { padding:20px 16px; }
+    .head-sigs { gap:6px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="mh-left">
+    <div class="eyebrow">客戶參考 · 個股深度分析</div>
+    <div class="report-title">個股研究報告</div>
+    <div class="report-sub">0941.HK · 中國移動</div>
+  </div>
+  <div class="mh-right">
+    <div class="price"><span class="ccy">HKD</span>79.5</div>
+    <div class="change up"><span class="arrow">▲</span>+0.4%</div>
+    <div class="asof">截至 2026-09-29 13:15 HKT</div>
+  </div>
+</div>
+
+
+
+<div class="chart-card">
+  <div class="chart-title">價格走勢（實時日 K 線 · 260 交易日 + MA20/60/200）</div>
+  <img class="chart-svg" alt="K線圖" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/0941_kline.png"/>
+  <div class="chart-legend"><span class="lg"><i style="background:#1f9d57"></i>陽線（升）</span><span class="lg"><i style="background:#d64545"></i>陰線（跌）</span><span class="lg"><i style="background:#2f4b7c"></i>MA20 79.1</span><span class="lg"><i style="background:#c8881a"></i>MA60 80.5</span><span class="lg"><i style="background:#8a93a1"></i>MA200 81.2</span></div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-title">今日資金分布（按單型）</div>
+  <div class="chart-sub">分時淨流入／流出（相對值）；綠柱為淨流入、紅柱為淨流出。</div>
+  <svg class="chart-svg" viewBox="0 0 720 150" width="100%" preserveAspectRatio="xMidYMid meet"><line x1="52" y1="69.0" x2="708" y2="69.0" stroke="#cfd4dc" stroke-width="1"/><rect x="84.8" y="69.0" width="98.4" height="1.8" fill="#d64545" fill-opacity="0.78"/><rect x="248.8" y="69.0" width="98.4" height="0.5" fill="#d64545" fill-opacity="0.78"/><rect x="412.8" y="47.9" width="98.4" height="21.1" fill="#1f9d57" fill-opacity="0.78"/><rect x="576.8" y="14.0" width="98.4" height="55.0" fill="#1f9d57" fill-opacity="0.78"/><text x="46" y="18.0" text-anchor="end" font-size="9" fill="#8a93a1">+133</text><text x="46" y="128.0" text-anchor="end" font-size="9" fill="#8a93a1">-133</text><text x="134.0" y="142.0" text-anchor="middle" font-size="9" fill="#8a93a1">特大單</text><text x="298.0" y="142.0" text-anchor="middle" font-size="9" fill="#8a93a1">大單</text><text x="462.0" y="142.0" text-anchor="middle" font-size="9" fill="#8a93a1">中單</text><text x="626.0" y="142.0" text-anchor="middle" font-size="9" fill="#8a93a1">小單</text></svg>
+</div>
+
+<div class="card watch">
+  <div class="card-cols">
+    <div class="col">
+      
+      <div class="section">
+        <div class="section-label">估值</div>
+        <div class="metric-grid">
+          <div class="kv"><span class="k">市盈率 (PE)</span><span class="v hl-up">11.4x</span></div>
+          <div class="kv"><span class="k">同業均值的 PE</span><span class="v">10.0x</span></div>
+          <div class="kv"><span class="k">市帳率 (PB)</span><span class="v">1.04x</span></div>
+          <div class="kv"><span class="k">共識目標價</span><span class="v">99.8</span></div>
+        </div>
+        <div class="section-label sub">同業 PE 對比</div>
+        <div class="peer-cmp"><div class="pcmp self"><div class="pcmp-nm">中國移動 (0941.HK)</div><div class="pcmp-val">11.4x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:82.0%"></div></div></div>
+<div class="pcmp peer"><div class="pcmp-nm">中國電信 (0728.HK)</div><div class="pcmp-val">12.1x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:100.0%"></div></div></div>
+<div class="pcmp peer"><div class="pcmp-nm">中國聯通 (0762.HK)</div><div class="pcmp-val">9.2x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:17.4%"></div></div></div>
+<div class="pcmp peer"><div class="pcmp-nm">中國石油 (0857.HK)</div><div class="pcmp-val">8.6x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:5.0%"></div></div></div><div class="pcmp peer-avg"><div class="pcmp-nm">同業 PE 均值</div><div class="pcmp-val">10.0x</div><div class="pcmp-bar"><div class="pcmp-fill" style="width:42.4%"></div></div></div></div>
+      </div>
+      
+      <div class="section">
+        <div class="section-label">技術走勢</div>
+        <div class="metric-grid">
+          <div class="kv"><span class="k">MA20</span><span class="v">79.1</span></div>
+          <div class="kv"><span class="k">MA60</span><span class="v">78.9</span></div>
+          <div class="kv"><span class="k">MA200</span><span class="v">—</span></div>
+          <div class="kv"><span class="k">52週低位</span><span class="v">73.2</span></div>
+          <div class="kv"><span class="k">52週高位</span><span class="v">81.9</span></div>
+        </div>
+        <div class="range-track"><div class="range-fill" style="width:73%"></div></div>
+        <div class="range-ends"><span>區間位置（52週）</span><span class="range-pct">73%</span></div>
+      </div>
+    </div>
+    <div class="col">
+      
+      <div class="section">
+        <div class="section-label">操作參考</div>
+        <div class="levels">
+          <div class="lv"><span class="lv-k">共識目標</span><span class="lv-v">分析師共識均價約 99.8（區間 92.8–108.0），隱含約 +25%</span></div>
+          <div class="lv"><span class="lv-k">支持位</span><span class="lv-v">技術支持 78.5（週線 MA10）／76.9（年線級）；失守 76.9 收市轉弱</span></div>
+          <div class="lv"><span class="lv-k">吸納區</span><span class="lv-v">現價 79.5 屬區間中軸，高息客可即市分段收集；77 附近加注值博率更高</span></div>
+          <div class="lv"><span class="lv-k">現價 vs 共識</span><span class="lv-v hl-down">低於共識 20%</span></div>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-label">關鍵催化劑</div>
+        <div class="catalyst"><div class="cat-item"><span class="cat-dot">·</span><span>2026 全年派息率指引「穩中有升」，末期息料續增</span></div><div class="cat-item"><span class="cat-dot">·</span><span>算力服務高速增長（智算 +130%、AIDC +486%），第二增長曲線</span></div><div class="cat-item"><span class="cat-dot">·</span><span>全球減息週期利好高息防守股估值</span></div><div class="cat-item"><span class="cat-dot">·</span><span>增值稅影響 FY27 起正常化，盈利恢復正增長</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  
+      <div class="section multidim-full">
+        <div class="section-label">多維分析</div>
+        <div class="multidim-grid"><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">行業</div>
+            <div class="md-note">電訊成熟期，算力/雲結構性增長轉型中</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">量價</div>
+            <div class="md-note">MACD 剛金叉、價企 MA20/50/200，惟成交縮（量比 0.83）</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">趨勢</div>
+            <div class="md-note">日線三線之上但週線糾結，方向未明</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">估值</div>
+            <div class="md-note">PE 11.4（5年分位 77%）、PB 1.04，已 re-rate 唔平</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">盈利質素</div>
+            <div class="md-note">自由現金流倍增、派息率升至 74%；純利受增值稅拖累 -6.3%</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">行業基準</div>
+            <div class="md-note">同業估值相若（電信12.1 / 聯通9.2 / 中石油8.6）</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">資金</div>
+            <div class="md-note">特大單輕微流出、散戶淨流入；沽空佔流通 0.31% 偏低</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">衍生品</div>
+            <div class="md-note">窩輪/期權未見極端異動</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">情緒</div>
+            <div class="md-note">新聞好淡分歧：派息提升 vs 純利 miss</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot watch"></span>
+          <div class="md-text">
+            <div class="md-name">板塊輪動</div>
+            <div class="md-note">高息防守板塊，利率敏感，減息週期偏受惠</div>
+          </div>
+        </div><div class="md-item">
+          <span class="md-dot good"></span>
+          <div class="md-text">
+            <div class="md-name">資本運作</div>
+            <div class="md-note">無攤薄財技、派息遞增、資本開支向算力傾斜</div>
+          </div>
+        </div></div>
+      </div>
+</div>
+
+<div class="card-head watch">
+  <div class="head-verdict"><span class="hv-word watch">中性觀望</span><span class="hv-score">綜合評分 <b>50</b></span></div>
+  <div class="head-sigs"><span class="sigs-label">信號</span><span class="sig sig-watch"><i class="dot"></i><span class="lab">技術</span><span class="meter"><i class="sig-seg on watch"></i><i class="sig-seg on watch"></i><i class="sig-seg"></i></span><span class="st st-watch">觀望</span></span><span class="sig sig-watch"><i class="dot"></i><span class="lab">資金</span><span class="meter"><i class="sig-seg on watch"></i><i class="sig-seg on watch"></i><i class="sig-seg"></i></span><span class="st st-watch">觀望</span></span><span class="sig sig-watch"><i class="dot"></i><span class="lab">衍生品</span><span class="meter"><i class="sig-seg on watch"></i><i class="sig-seg on watch"></i><i class="sig-seg"></i></span><span class="st st-watch">觀望</span></span><span class="sig sig-watch"><i class="dot"></i><span class="lab">情緒</span><span class="meter"><i class="sig-seg on watch"></i><i class="sig-seg on watch"></i><i class="sig-seg"></i></span><span class="st st-watch">觀望</span></span></div>
+  <div class="head-summary">高息防守＋算力轉型，增值稅一次性拖累盈利，估值已 re-rate，收息為主</div>
+  <div class="head-points">
+    <div class="head-point hp-thesis"><div class="hp-label">核心論點</div><div class="hp-txt">中國移動係港股最優質高息股之一：息率約 6.8%、派息連續 8 年遞增、管理層指引 2026 派息率穩中有升，經營現金流 +37%、自由現金流倍增，派息可持續性高。同時算力/移動雲業務高速增長（移動雲首次入國內公有雲前三），為傳統通信轉型提供期權。低 beta（0.47）防守性強，適合中線收息配置；分析師共識目標約 99.8，隱含約 +25% 空間。</div></div>
+    <div class="head-point hp-risk"><div class="hp-label">主要風險</div><div class="hp-txt">純利受增值稅稅目調整一次性拖累（1H26 -6.3%），增長要待 FY27 正常化；估值已 re-rate（PE 近 5 年 77 分位、價格 89 分位），短線缺大幅上升催化；傳統通信收入下滑（無線 -10.8%／語音 -9.5%）；國企屬性下爆發力有限、派息增長溫和。</div></div>
+  </div>
+  <div class="head-close"><span class="hc-label">總結</span><span class="hc-txt">息率高、派息穩、防守佳；增長等 FY27 正常化</span></div>
+  
+</div>
+
+<div class="page-footer">
+  本報告僅供參考，不構成投資建議。價格可升可跌，過往表現不代表將來表現。<br>
+  投資涉及風險，請根據自身風險承受能力作出獨立判斷。
+</div>
+
+<script>
+(function() {
+  var px = document.documentElement.scrollHeight;
+  var mm = Math.ceil(px / 3.7795275591) + 24; /* + 上下 margin buffer */
+  var st = document.createElement('style');
+  st.setAttribute('data-dynpage', '1');
+  st.textContent = '@page { size: 210mm ' + mm + 'mm; margin: 10mm 12mm; }';
+  document.head.appendChild(st);
+})();
+</script>
+
+</body>
+</html>
