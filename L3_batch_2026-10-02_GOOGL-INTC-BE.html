@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L3 多股深度分析 · GOOGL / INTC / BE</title>
+<style>
+  :root {
+    --bg:        #f4f6f9;
+    --card-bg:   #ffffff;
+    --text:      #1a2230;
+    --text-2:    #475569;
+    --text-3:    #94a3b8;
+    --border:    #e6eaf0;
+    --border-2:  #f1f4f8;
+    --shadow-sm: 0 1px 3px rgba(15,23,42,.05);
+    --shadow-md: 0 8px 28px rgba(15,23,42,.09), 0 2px 6px rgba(15,23,42,.04);
+    --red:       #dc2626;
+    --red-bg:    #fef2f3;
+    --red-tag:   #fde8ec;
+    --green:     #15803d;
+    --green-bg:  #f0faf4;
+    --green-tag: #dcfce7;
+    --amber:     #c2410c;
+    --amber-bg:  #fffaf2;
+    --amber-tag: #fef3c7;
+    --slate-tag: #f1f5f9;
+    --radius:    14px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang HK", "Noto Sans HK", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 32px 36px 40px; max-width: 1280px; margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* HEADER */
+  .page-header { margin-bottom: 22px; display:flex; align-items:flex-end; justify-content:space-between;
+    padding-bottom: 18px; border-bottom: 2px solid var(--border); }
+  .page-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.3px; }
+  .page-header .sub { font-size: .8rem; color: var(--text-3); margin-top: 6px; font-weight: 500; }
+  .page-header .date { font-size: .82rem; color: var(--text-3); font-weight: 500; text-align: right; }
+
+  /* CROSS-COMPARE TABLE */
+  .cross-wrap { background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; margin-bottom: 26px; box-shadow: var(--shadow-sm); }
+  .cross-title { font-size: .82rem; font-weight: 700; color: var(--text); letter-spacing: .5px;
+    margin-bottom: 12px; display:flex; align-items:center; gap:8px; }
+  .cross-title::before { content:""; width:4px; height:16px; background: var(--green); border-radius:2px; }
+  table.cross { width: 100%; border-collapse: collapse; font-size: .78rem; }
+  table.cross th { text-align: left; color: var(--text-3); font-weight: 700; font-size: .68rem;
+    letter-spacing: .8px; text-transform: uppercase; padding: 8px 10px; border-bottom: 2px solid var(--border); }
+  table.cross td { padding: 10px; border-bottom: 1px solid var(--border-2); color: var(--text-2); vertical-align: top; }
+  table.cross tr:last-child td { border-bottom: none; }
+  table.cross .c-ticker { font-weight: 700; color: var(--text); }
+  table.cross .c-name { font-size: .68rem; color: var(--text-3); }
+  table.cross .c-rank { font-size: 1.1rem; }
+  .pill { display:inline-block; padding: 2px 9px; border-radius: 20px; font-size: .68rem; font-weight: 700; white-space:nowrap; }
+  .pill-red { background: var(--red-tag); color: var(--red); }
+  .pill-green { background: var(--green-tag); color: var(--green); }
+  .pill-amber { background: var(--amber-tag); color: var(--amber); }
+  .pill-slate { background: var(--slate-tag); color: #64748b; }
+
+  /* GRID */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
+
+  /* CARD */
+  .card { position: relative; background: var(--card-bg); border-radius: var(--radius);
+    box-shadow: var(--shadow-sm); overflow: hidden; transition: box-shadow .25s, transform .2s; display: flex; }
+  .card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+  .card-accent { width: 4px; flex-shrink: 0; background: var(--border); transition: background .3s; }
+  .card.bullish  .card-accent { background: var(--green); }   /* B52: 看好=綠 */
+  .card.bearish  .card-accent { background: var(--red); }     /* B52: 看淡=紅 */
+  .card.neutral  .card-accent { background: var(--amber); }
+  .card-body { flex: 1; padding: 20px 22px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .ticker { font-size: 1rem; font-weight: 700; letter-spacing: .3px; line-height: 1.2; }
+  .stock-name { font-size: .74rem; color: var(--text-3); margin-top: 3px; }
+  .price-block { text-align: right; flex-shrink: 0; }
+  .price { font-size: 1.55rem; font-weight: 700; letter-spacing: -.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .price .ccy { font-size: .82rem; font-weight: 600; color: var(--text-3); margin-right: 1px; }
+  .change { display:inline-flex; align-items:center; gap:2px; font-size:.78rem; font-weight:600;
+    padding:3px 9px; border-radius:5px; margin-top:5px; font-variant-numeric: tabular-nums; }
+  .change.up { color: var(--green); background: var(--green-bg); }   /* B52: 升=綠 */
+  .change.down { color: var(--red); background: var(--red-bg); }     /* B52: 跌=紅 */
+  .change.flat { color: var(--text-3); background: #f8fafc; }
+  .arrow { font-size: .7rem; }
+
+  .card-rank { font-size: 1.3rem; line-height: 1; margin-top: -4px; }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { display:inline-block; padding:3px 11px; border-radius:20px; font-size:.7rem; font-weight:600;
+    letter-spacing:.2px; line-height:1.4; white-space:nowrap; }
+  .tag-red { background: var(--red-tag); color: var(--red); }
+  .tag-green { background: var(--green-tag); color: var(--green); }
+  .tag-amber { background: var(--amber-tag); color: var(--amber); }
+  .tag-slate { background: var(--slate-tag); color: #64748b; }
+  .tag-score { background: #1a2230; color: #fff; font-variant-numeric: tabular-nums; }
+  .tag-halt { background: #e2e8f0; color: #475569; border: 1px dashed #94a3b8; }
+
+  /* cap-level badge（市值層級：大/中/細/超細/停牌）— 見客決策必須顯示 */
+  .cap-badge { display:inline-block; font-size:.62rem; font-weight:700; padding:1px 7px; border-radius:5px; margin-top:5px; letter-spacing:.5px; }
+  .cap-large   { background:#ede9fe; color:#6d28d9; }
+  .cap-mid     { background:#dbeafe; color:#1d4ed8; }
+  .cap-small   { background:#fee2e2; color:#b91c1c; }
+  .cap-micro   { background:#fde8e8; color:#991b1b; border:1px solid #f4a3a3; }  /* 超細/仙股/殼股 */
+  .cap-suspended { background:#e2e8f0; color:#475569; border:1px dashed #94a3b8; }
+  .price.penny { color:#b91c1c; }                                   /* 仙股 <$0.1 紅字警示 */
+  .change.halt { color:#475569; background:#e2e8f0; }               /* 停牌 */
+  .card.suspended .card-accent { background:#94a3b8; }
+  .card.suspended .range-fill { background:#94a3b8; }
+  .card.suspended .judgment { border-left-color:#94a3b8; background:#f1f5f9; }
+
+  .section { border-top: 1px solid var(--border-2); padding-top: 12px; }
+  .section-label { font-size:.68rem; font-weight:700; color:var(--text-3); letter-spacing:1.5px;
+    text-transform: uppercase; margin-bottom: 9px; }
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 18px; }
+  .kv { display:flex; justify-content:space-between; align-items:baseline; font-size:.76rem; line-height:1.7; }
+  .kv .k { color: var(--text-3); flex-shrink:0; }
+  .kv .v { color: var(--text-2); font-weight:600; text-align:right; font-variant-numeric: tabular-nums; margin-left:8px; }
+  .kv .v.hl-red { color: var(--red); }
+  .kv .v.hl-green { color: var(--green); }
+
+  .range-track { position:relative; height:6px; background:linear-gradient(90deg,#e2e8f0,#cbd5e1);
+    border-radius:4px; margin:4px 0 8px; }
+  .range-fill { position:absolute; left:0; top:0; bottom:0; background:var(--text-3); border-radius:4px; opacity:.35; }
+  .card.bullish .range-fill { background: var(--green); }
+  .card.bearish .range-fill { background: var(--red); }
+  .card.neutral .range-fill { background: var(--amber); }
+  .range-dot { position:absolute; top:50%; width:12px; height:12px; background:#fff; border:3px solid var(--text-2);
+    border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 1px 3px rgba(0,0,0,.2); }
+  .range-ends { display:flex; justify-content:space-between; font-size:.68rem; color:var(--text-3); font-variant-numeric: tabular-nums; }
+  .range-pct { font-weight:700; color:var(--text-2); }
+
+  .ta-verdict { font-size:.74rem; color:var(--text-2); margin-top:8px; padding:7px 10px; background:var(--border-2);
+    border-radius:var(--radius-sm); line-height:1.5; }
+  .ta-verdict b { color: var(--text); }
+
+  .scorecard .kv { font-size: .74rem; }
+
+  .levels { display:flex; flex-direction:column; gap:7px; }
+  .lv { display:grid; grid-template-columns: 52px 1fr auto; align-items:baseline; gap:8px; font-size:.74rem; }
+  .lv-k { font-weight:700; color:var(--text-3); flex-shrink:0; }
+  .lv-v { font-weight:700; color:var(--text); font-variant-numeric: tabular-nums; }
+  .lv-n { font-size:.68rem; color:var(--text-3); text-align:right; }
+
+  .industry { font-size:.76rem; color:var(--text-2); line-height:1.55; }
+  .industry b { color:var(--text); font-weight:600; }
+
+  .catalyst { display:flex; flex-direction:column; gap:7px; }
+  .cat-item { display:flex; align-items:baseline; gap:9px; font-size:.74rem; line-height:1.45; }
+  .cat-date { flex-shrink:0; font-weight:700; font-size:.68rem; color:var(--text-2); background:var(--border-2);
+    padding:2px 7px; border-radius:4px; font-variant-numeric: tabular-nums; min-width:42px; text-align:center; }
+  .cat-text { color:var(--text-2); }
+
+  .judgment { font-size:.78rem; color:var(--text-2); line-height:1.6; padding:12px 14px; background:#fafbfc;
+    border-radius:var(--radius-sm); border-left:3px solid var(--border); }
+  .card.bullish .judgment { border-left-color:var(--green); background:var(--green-bg); }
+  .card.bearish .judgment { border-left-color:var(--red); background:var(--red-bg); }
+  .card.neutral .judgment { border-left-color:var(--amber); background:var(--amber-bg); }
+  .judgment b { color:var(--text); font-weight:600; }
+
+  .kline-img { width:100%; display:block; border-radius: var(--radius-sm); border:1px solid var(--border); background:#fff; }
+
+  .page-footer { margin-top:30px; text-align:center; font-size:.7rem; color:var(--text-3); line-height:1.8; padding:14px 0; }
+
+  @media print {
+    body { background:#fff; padding:18px; max-width:none; }
+    .card, .cross-wrap { box-shadow:none; border:1px solid var(--border); break-inside:avoid; }
+    .card:hover { box-shadow:none; transform:none; }
+  }
+  @media (max-width: 920px) {
+    .grid { grid-template-columns: 1fr; }
+    body { padding:16px; }
+    .page-header { flex-direction:column; align-items:flex-start; gap:6px; }
+    .page-header .date { text-align:left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <h1>L3 多股深度分析 · GOOGL / INTC / BE</h1>
+    <div class="sub">客戶會議決策版 · L3 多股深度分析（每只完整 TA + 十守則 + 操作價位）</div>
+  </div>
+  <span class="date">2026-10-02（數據截至 2026-10-01 美股收市）</span>
+</div>
+
+<div class="cross-wrap">
+  <div class="cross-title">跨股比較 · 見客決策核心</div>
+  <table class="cross">
+<tr><th>質素排序</th><th>標的 · 市值層級</th><th>評分 · 判定</th><th>相對吸引力</th><th>入場優先級</th><th>資金分配<br>（相對）</th><th>守則零 · TA 中線裁決</th><th>關鍵風險</th></tr>
+<tr>
+  <td><span class="c-rank">🥇</span><div class="c-name">質素最高</div></td>
+  <td><span class="c-ticker">BE.US</span><div class="c-name">Bloom Energy 布魯姆能源</div><div class="c-name">中大型 · $81.8B</div></td>
+  <td><b>57</b><div><span class="pill pill-amber">🟡 中性觀望</span></div></td>
+  <td>基本面動能最強（EPS 3M 修訂 +52.7%）、AI 數據中心供電主題純度最高；但估值最極端</td>
+  <td><span class="pill pill-red">低</span><div class="c-name">須等突破 $295 或回落 $240–255</div></td>
+  <td><b>40%</b></td>
+  <td><span class="pill pill-green">🟢 結構增長</span><div class="c-name">TA Overweight · 不提供目標價 · 6–12M</div></td>
+  <td>PE 334x / PB 50.7x；券商目標僅 +1.9%；ATR 7.6% 波幅大</td>
+</tr>
+<tr>
+  <td><span class="c-rank">🥈</span><div class="c-name">最可執行</div></td>
+  <td><span class="c-ticker">GOOGL.US</span><div class="c-name">Alphabet A（谷歌）</div><div class="c-name">大型 · $4,136.7B</div></td>
+  <td><b>53</b><div><span class="pill pill-amber">🟡 中性觀望</span></div></td>
+  <td>質素與風險最平衡（PE 16.95x、R:R 2.4、券商目標仍有 +26.9% 空間）</td>
+  <td><span class="pill pill-green">高</span><div class="c-name">唯一即市可執行 · 候 $330–340</div></td>
+  <td><b>60%</b></td>
+  <td><span class="pill pill-green">🟢 結構增長</span><div class="c-name">TA Overweight · PT $429.36 · 6–12M</div></td>
+  <td>短線四線全失、MACD 轉負；搜尋廣告受宏觀廣告開支影響</td>
+</tr>
+<tr>
+  <td><span class="c-rank">🥉</span><div class="c-name">不建議</div></td>
+  <td><span class="c-ticker">INTC.US</span><div class="c-name">Intel 英特爾</div><div class="c-name">大型 · $599.3B</div></td>
+  <td><b>52</b><div><span class="pill pill-amber">🟡 中性觀望</span></div></td>
+  <td>估值與基本面背馳 —— 分析師目標價（$116.37）已被現價升穿，機構共識集中「持有」</td>
+  <td><span class="pill pill-slate">不建議</span><div class="c-name">現價不新建倉 · 持有者 $125–130 減磅</div></td>
+  <td><b>0%</b></td>
+  <td><span class="pill pill-slate">🟡 週期性</span><div class="c-name">TA Underweight · PT $106 · 3–6M</div></td>
+  <td>TTM 仍虧損、PB 6.85x 高於行業中位；20 日已 +33% 過熱</td>
+</tr>
+</table>
+<div style="font-size:.76rem;color:var(--text-2);line-height:1.75;margin-top:14px">
+<b>一句總結：</b>三隻政策／主題各異（AI 廣告雲、半導體代工、AI 數據中心供電），但<b>共同紀律一致 —— 現價全部不追高</b>，三隻都落 🟡 中性觀望，冇一隻出現「強買」訊號。<br>
+· <b>質素排序</b>（按綜合評分）＝ BE 57 → GOOGL 53 → INTC 52。<br>
+· <b>資金分配反映「可執行性」而非質素</b>：BE 質素最高但要等入場位，所以先撥 40% 待觸發；GOOGL 是唯一即市可執行、風險回報最對稱，故權重最高 60%；INTC 不做（0%）。<br>
+<b>⚠️ 分歧提示：</b>量化模型對 INTC 給 Underweight、對 GOOGL／BE 給 Overweight，與本表評分標籤（三隻皆中性觀望）方向<b>大致一致但強度不同</b> —— 模型屬 3–12 個月中期方向參考，<b>非即時操作指令</b>。<br>
+<b>⏱ 催化時序：</b>三隻嘅 Q3 業績全部落在 <b>10 月下旬</b>（GOOGL 最早，10 月 29 日；BE／INTC 待公布）—— 即係話未來 3–4 週係三隻嘅<b>共同風險事件窗口</b>，倉位宜留白、等業績落地再決定加定唔加，唔好業績前重倉博方向。
+</div>
+<div style="margin-top:14px;padding:14px 16px;background:var(--amber-bg);border:1px solid #f5d9b0;border-radius:10px;font-size:.8rem;line-height:1.75">
+<b>🎯 如果只可以揀一隻：GOOGL.US（Alphabet）</b><br>
+理由三點：① 三隻入面<b>唯一「現價就有可執行入場位」</b>——$330–340 貼近年線 MA200（$338.74），唔需要等突破或深回吐；② <b>風險回報最對稱</b>——R:R 2.4 : 1（風險 $39 換回報 $91），BE 只有 0.1 : 1、INTC 為負；③ <b>估值與質素平衡最好</b>——PE（TTM）16.95x、ROE 49.6%、券商 62 家中 56 家正面、目標價仍有 +26.9% 空間。<br>
+<b>但如果你嘅時間軸係「中長線主題配置、可以等」</b>：質素最高其實係 <b>BE.US</b>（57 分、EPS 3M 修訂 +52.7%、TA Overweight），前提係<b>必須等收市帶量突破 $295，或回落至 $240–255 先入</b>，並嚴守 $226 失效線 —— 現價 $277.58 入場 R:R 只有 0.1 : 1，唔值博。
+</div>
+</div>
+
+<div class="grid">
+  <div class="card neutral">
+  <div class="card-accent"></div>
+  <div class="card-body">
+    <div class="card-top">
+      <div class="ticker-block">
+        <div class="ticker">BE.US</div>
+        <div class="stock-name">Bloom Energy 布魯姆能源 · 紐約證交所</div>
+        <span class="cap-badge cap-mid">中大型 · $81.8B</span>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="ccy">$</span>277.58</div>
+        <div class="change up"><span class="arrow">▲</span>0.22%</div>
+      </div>
+    </div>
+    <div class="card-rank">🥇</div>
+    <div class="card-tags"><span class="tag tag-score">57分</span><span class="tag tag-amber">🟡 中性觀望</span><span class="tag tag-green">守則零 🟢 結構增長</span></div>
+    <div class="section">
+      <div class="section-label">估值</div>
+      <div class="metric-grid"><div class="kv"><span class="k">PE（TTM）</span><span class="v hl-red">333.77x（另一源 365.24x）</span></div>
+<div class="kv"><span class="k">預期 PE</span><span class="v hl-red">78.27x（另一源 56.17x）</span></div>
+<div class="kv"><span class="k">PB</span><span class="v hl-red">50.72x</span></div>
+<div class="kv"><span class="k">PS</span><span class="v hl-red">26.26x</span></div>
+<div class="kv"><span class="k">市值</span><span class="v">$81.8B</span></div>
+<div class="kv"><span class="k">EPS 3個月共識修訂</span><span class="v hl-green">+52.7%（n=439）</span></div>
+<div class="kv"><span class="k">券商目標價</span><span class="v hl-red">$282.82（僅 +1.9%）</span></div>
+<div class="kv"><span class="k">券商評級</span><span class="v">31家：10強買/5買/12持有/1減持/1沽出</span></div>
+<div class="kv"><span class="k">淨利（TTM）</span><span class="v">$244.94M</span></div>
+<div class="kv"><span class="k">ROE / 負債率</span><span class="v hl-red">22.20% / 70.85%</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">52週區間</div>
+      <div class="range-track"><div class="range-fill" style="width:74.6%"></div><div class="range-dot" style="left:74.6%"></div></div><div class="range-ends"><span>61.37</span><span class="range-pct">距低 +352.3% · 距高 −21.0%</span><span>351.28</span></div>
+    </div>
+    <div class="section">
+      <div class="section-label">技術</div>
+      <div class="metric-grid"><div class="kv"><span class="k">收市價</span><span class="v hl-green">$277.58（+0.22%）</span></div>
+<div class="kv"><span class="k">MA20 / MA50</span><span class="v hl-green">269.53 / 234.72</span></div>
+<div class="kv"><span class="k">MA10 / MA60</span><span class="v hl-green">275.43 / 233.62</span></div>
+<div class="kv"><span class="k">MA200（年線）</span><span class="v hl-green">206.43（+34.5%）</span></div>
+<div class="kv"><span class="k">MACD 柱</span><span class="v hl-red">−0.611（前值 +0.290，剛轉負）</span></div>
+<div class="kv"><span class="k">RSI(14)</span><span class="v">55.6（中性）</span></div>
+<div class="kv"><span class="k">ATR(14)</span><span class="v hl-red">$20.994（7.56%）</span></div>
+<div class="kv"><span class="k">成交量</span><span class="v hl-red">11.55M / 20日均 17.81M（0.65× 縮量）</span></div>
+<div class="kv"><span class="k">近5日 / 20日</span><span class="v hl-green">+4.10% / +27.75%</span></div>
+<div class="kv"><span class="k">近120日 / 250日</span><span class="v hl-green">+66.51% / +215.43%</span></div>
+<div class="kv"><span class="k">年初至今</span><span class="v hl-green">+181.26%</span></div>
+<div class="kv"><span class="k">52週區間位置</span><span class="v">75%（距高 −21.0%）</span></div></div>
+      <div class="ta-verdict"><b>TA 模型：Overweight（增持）</b>· 時間窗 6–12 個月，但<b>明確不提供目標價</b>（改用券商共識 $282.82）；交易員 Action <b>Buy</b>，惟<b>入場價與止蝕價均為「not provided」</b>，並自述原因：技術市場報告今次只回傳工具調用、無實際價格數據，故任何具體數字都會係編造 —— 即 TA 嘅買入判斷<b>缺入場價校準</b>，須自行以 ATR 定價位。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">十守則評分</div>
+      <div class="scorecard"><div class="kv"><span class="k">守則零</span><span class="v">🟢 結構增長（AI 數據中心現場供電）</span></div>
+<div class="kv"><span class="k">守則一/二 量價</span><span class="v">🟡 均線多頭排列，但 MACD 轉負＋縮量</span></div>
+<div class="kv"><span class="k">守則三 估值</span><span class="v">🔴 PE 334x / PB 50.7x，極端偏高</span></div>
+<div class="kv"><span class="k">守則六/七 資金</span><span class="v">🟡 全日淨流出 −$73.77M</span></div>
+<div class="kv"><span class="k">守則九/十 質素</span><span class="v">🟢 EPS 修訂 +52.7%、ROE 22.2%，惟負債率 70.9%</span></div>
+<div class="kv"><span class="k">綜合</span><span class="v">57 分 · 🟡 中性觀望</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">操作價位</div>
+      <div class="levels"><div class="lv"><span class="lv-k">入場①</span><span class="lv-v">突破 $295</span><span class="lv-n">須收市站穩且量能 >均量</span></div>
+<div class="lv"><span class="lv-k">入場②</span><span class="lv-v">$240–255</span><span class="lv-n">回落守穩 · 失守 $226 失效</span></div>
+<div class="lv"><span class="lv-k">目標</span><span class="lv-v">$282.82</span><span class="lv-n">券商共識 僅 +1.9%</span></div>
+<div class="lv"><span class="lv-k">止蝕</span><span class="lv-v">$226</span><span class="lv-n">收市跌穿即失效（−18.6%）</span></div>
+<div class="lv"><span class="lv-k">盈虧比</span><span class="lv-v">0.1 : 1</span><span class="lv-n">風險 $52 / 回報 $5</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">行業 / 板塊</div>
+      <div class="industry"><b>工業 · 電氣設備與潔淨能源</b>。固態氧化物燃料電池（SOFC）＋電解槽，主打 AI 數據中心現場供電（on-site power）。守則零：<b>🟢 結構增長</b> —— 數據中心用電缺口屬長週期主題，訂單積壓為核心觀察點。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">催化劑</div>
+      <div class="catalyst"><div class="cat-item"><span class="cat-date">10月下旬</span><span class="cat-text">Q3 財報（訂單積壓 / backlog、毛利率、數據中心合約）</span></div>
+<div class="cat-item"><span class="cat-date">持續</span><span class="cat-text">AI 數據中心供電訂單落地（雲商 / 能源夥伴合作）</span></div>
+<div class="cat-item"><span class="cat-date">持續</span><span class="cat-text">美國數據中心用電政策與補貼、天然氣／氫能價格</span></div>
+<div class="cat-item"><span class="cat-date">風險</span><span class="cat-text">高估值對長端利率極敏感；補貼政策一變估值即重估</span></div></div>
+    </div>
+    <div class="section"><div class="section-label">K線圖</div><img class="kline-img" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/BE_kline.png" alt="BE.US K線"></div>
+    <div class="judgment">三隻之中<b>評分最高（57 分）</b>：EPS 3 個月共識修訂 +52.7%、ROE 22.2%、均線多頭排列、年內 +181%，基本面動能最強。但<b>估值最極端</b>（PE 334x / PB 50.7x）、<b>券商目標價僅剩 +1.9% 空間</b>、MACD 剛轉負且縮量。綜合 <b>57 分 · 🟡 中性觀望</b>；<b>🟡 短期（1–4 週）</b>動能未破但賠率極差、<b>現價 $277.58 入場 R:R 只有 0.1 : 1，不宜現價入場</b>；<b>🟢 中長線（季以上）</b>主題純度最高，候突破 $295（帶量）或回落 $240–255，嚴守 $226。</div>
+  </div>
+</div>
+<div class="card neutral">
+  <div class="card-accent"></div>
+  <div class="card-body">
+    <div class="card-top">
+      <div class="ticker-block">
+        <div class="ticker">GOOGL.US</div>
+        <div class="stock-name">Alphabet A（谷歌）· 納斯達克</div>
+        <span class="cap-badge cap-large">大型 · $4,136.7B</span>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="ccy">$</span>338.24</div>
+        <div class="change down"><span class="arrow">▼</span>1.70%</div>
+      </div>
+    </div>
+    <div class="card-rank">🥈</div>
+    <div class="card-tags"><span class="tag tag-score">53分</span><span class="tag tag-amber">🟡 中性觀望</span><span class="tag tag-green">守則零 🟢 結構增長</span></div>
+    <div class="section">
+      <div class="section-label">估值</div>
+      <div class="metric-grid"><div class="kv"><span class="k">PE（TTM）</span><span class="v hl-green">16.95x</span></div>
+<div class="kv"><span class="k">預期 PE</span><span class="v">22.44x</span></div>
+<div class="kv"><span class="k">預期 PEG</span><span class="v">1.42</span></div>
+<div class="kv"><span class="k">PB / PS</span><span class="v">6.65x / 9.28x</span></div>
+<div class="kv"><span class="k">市值</span><span class="v">$4,136.7B</span></div>
+<div class="kv"><span class="k">股息率</span><span class="v">0.25%（DPS $0.83）</span></div>
+<div class="kv"><span class="k">EPS 3個月共識修訂</span><span class="v hl-green">+1.8%（n=56）</span></div>
+<div class="kv"><span class="k">券商目標價</span><span class="v hl-green">$429.36（+26.9%）</span></div>
+<div class="kv"><span class="k">券商評級</span><span class="v hl-green">62家：43強買/13買/5持有/0沽出</span></div>
+<div class="kv"><span class="k">ROE / 負債率</span><span class="v hl-green">49.55% / 30.53%</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">52週區間</div>
+      <div class="range-track"><div class="range-fill" style="width:59.3%"></div><div class="range-dot" style="left:59.3%"></div></div><div class="range-ends"><span>235.84</span><span class="range-pct">距低 +43.4% · 距高 −17.2%</span><span>408.61</span></div>
+    </div>
+    <div class="section">
+      <div class="section-label">技術</div>
+      <div class="metric-grid"><div class="kv"><span class="k">收市價</span><span class="v hl-red">$338.24（−1.70%）</span></div>
+<div class="kv"><span class="k">MA20 / MA50</span><span class="v hl-red">342.57 / 343.85</span></div>
+<div class="kv"><span class="k">MA10 / MA60</span><span class="v hl-red">344.58 / 345.57</span></div>
+<div class="kv"><span class="k">MA200（年線）</span><span class="v hl-red">338.74</span></div>
+<div class="kv"><span class="k">MACD 柱</span><span class="v hl-red">−0.576（前值 +0.110，剛轉負）</span></div>
+<div class="kv"><span class="k">RSI(14)</span><span class="v">45.4（中性偏弱）</span></div>
+<div class="kv"><span class="k">ATR(14)</span><span class="v">$9.118（2.70%）</span></div>
+<div class="kv"><span class="k">成交量</span><span class="v">33.27M / 20日均 26.69M（1.25×）</span></div>
+<div class="kv"><span class="k">近5日 / 20日</span><span class="v hl-red">−1.20% / +0.33%</span></div>
+<div class="kv"><span class="k">近60日 / 250日</span><span class="v hl-green">−6.54% / +37.67%</span></div>
+<div class="kv"><span class="k">年初至今</span><span class="v hl-green">+7.33%</span></div>
+<div class="kv"><span class="k">52週區間位置</span><span class="v">59%（距高 −17.2%）</span></div></div>
+      <div class="ta-verdict"><b>TA 模型：Overweight（增持）</b>· 目標 $429.36 · 時間窗 6–12 個月；交易員 Action Buy、入場 $335、止蝕 $299（−10.7%）、加倉區 $300–315。TA 同時自主設限：<b>「不追高於 $345」、Q3 財報前總倉位不超過標準 80%、升級至強買需見 Q3 自由現金流轉正</b> —— 核心保留與本方一致。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">十守則評分</div>
+      <div class="scorecard"><div class="kv"><span class="k">守則零</span><span class="v">🟢 結構增長（AI 雲＋搜尋廣告雙引擎）</span></div>
+<div class="kv"><span class="k">守則一/二 量價</span><span class="v">🔴 四線全失、MACD 轉負、量能放大偏空</span></div>
+<div class="kv"><span class="k">守則三 估值</span><span class="v">🟡 PE 低於自身歷史，但預期 PE 22x 不算便宜</span></div>
+<div class="kv"><span class="k">守則六/七 資金</span><span class="v">🟡 全日淨流出 −$21.13M（輕微）</span></div>
+<div class="kv"><span class="k">守則九/十 質素</span><span class="v">🟢 ROE 49.6%、負債率低、券商一致正面</span></div>
+<div class="kv"><span class="k">綜合</span><span class="v">53 分 · 🟡 中性觀望</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">操作價位</div>
+      <div class="levels"><div class="lv"><span class="lv-k">入場</span><span class="lv-v">$330–340</span><span class="lv-n">候回吐 · 貼近年線 $338.74</span></div>
+<div class="lv"><span class="lv-k">目標</span><span class="lv-v">$429.36</span><span class="lv-n">券商共識 +26.9% · 6–12M</span></div>
+<div class="lv"><span class="lv-k">止蝕</span><span class="lv-v">$296</span><span class="lv-n">收市跌穿即失效（−12.5%）</span></div>
+<div class="lv"><span class="lv-k">盈虧比</span><span class="lv-v">2.4 : 1</span><span class="lv-n">風險 $39 / 回報 $91</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">行業 / 板塊</div>
+      <div class="industry"><b>資訊科技 · 互動媒體與服務</b>（互聯網平台 / 大型科技）。搜尋廣告＋YouTube＋Google Cloud＋Gemini AI。守則零：<b>🟢 結構增長</b> —— AI 基建與雲端需求屬結構性而非週期性，廣告現金牛提供現金流支撐。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">催化劑</div>
+      <div class="catalyst"><div class="cat-item"><span class="cat-date">10-29</span><span class="cat-text">Q3 財報（焦點：雲端增速、自由現金流、capex 指引）</span></div>
+<div class="cat-item"><span class="cat-date">11月</span><span class="cat-text">反壟斷訴訟後續；分拆風險此前已解除</span></div>
+<div class="cat-item"><span class="cat-date">持續</span><span class="cat-text">Gemini 3 及自研 TPU 進展、AI 搜尋變現節奏</span></div>
+<div class="cat-item"><span class="cat-date">風險</span><span class="cat-text">美國宏觀廣告開支放緩；AI 資本開支回報期拉長</span></div></div>
+    </div>
+    <div class="section"><div class="section-label">K線圖</div><img class="kline-img" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/GOOGL_kline.png" alt="GOOGL.US K線"></div>
+    <div class="judgment">中長線結構增長邏輯未變（雲端＋AI 變現＋廣告現金牛），短線卻出現<b>四線全失＋MACD 剛轉負＋量能放大</b>，屬回吐而非趨勢破壞。綜合 <b>53 分 · 🟡 中性觀望</b>；<b>🟡 短期（1–4 週）</b>偏弱、宜候 $330–340 分段；<b>🟢 中長線（季以上）</b>估值合理、券商一致正面，$296 收市失守方算邏輯破壞。</div>
+  </div>
+</div>
+<div class="card neutral">
+  <div class="card-accent"></div>
+  <div class="card-body">
+    <div class="card-top">
+      <div class="ticker-block">
+        <div class="ticker">INTC.US</div>
+        <div class="stock-name">Intel 英特爾 · 納斯達克</div>
+        <span class="cap-badge cap-large">大型 · $599.3B</span>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="ccy">$</span>120.00</div>
+        <div class="change down"><span class="arrow">▼</span>0.19%</div>
+      </div>
+    </div>
+    <div class="card-rank">🥉</div>
+    <div class="card-tags"><span class="tag tag-score">52分</span><span class="tag tag-amber">🟡 中性觀望</span><span class="tag tag-slate">守則零 🟡 週期性</span></div>
+    <div class="section">
+      <div class="section-label">估值</div>
+      <div class="metric-grid"><div class="kv"><span class="k">PE（TTM）</span><span class="v hl-red">不適用（TTM 虧損）</span></div>
+<div class="kv"><span class="k">預期 PE</span><span class="v hl-red">58.19x（另一源 73.2x）</span></div>
+<div class="kv"><span class="k">PB（行業中位）</span><span class="v hl-red">6.85x（行業 4.40x）</span></div>
+<div class="kv"><span class="k">PS</span><span class="v hl-red">10.51x</span></div>
+<div class="kv"><span class="k">市值</span><span class="v">$599.3B</span></div>
+<div class="kv"><span class="k">EPS 3個月共識修訂</span><span class="v hl-green">+56.2%（n=689）</span></div>
+<div class="kv"><span class="k">券商目標價</span><span class="v hl-red">$116.37（−3.0%，低於現價）</span></div>
+<div class="kv"><span class="k">券商評級</span><span class="v hl-red">53家：14強買/1買/32持有/1減持/1沽出</span></div>
+<div class="kv"><span class="k">淨利（TTM）</span><span class="v hl-red">−$11.29B</span></div>
+<div class="kv"><span class="k">ROE / 負債率</span><span class="v hl-red">−12.18% / 49.05%</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">52週區間</div>
+      <div class="range-track"><div class="range-fill" style="width:80.3%"></div><div class="range-dot" style="left:80.3%"></div></div><div class="range-ends"><span>28.73</span><span class="range-pct">距低 +317.7% · 距高 −15.7%</span><span>142.35</span></div>
+    </div>
+    <div class="section">
+      <div class="section-label">技術</div>
+      <div class="metric-grid"><div class="kv"><span class="k">收市價</span><span class="v hl-red">$120.00（−0.19%）</span></div>
+<div class="kv"><span class="k">MA20 / MA50</span><span class="v hl-green">110.25 / 100.49</span></div>
+<div class="kv"><span class="k">MA10 / MA60</span><span class="v hl-green">119.94 / 100.97</span></div>
+<div class="kv"><span class="k">MA200（年線）</span><span class="v hl-green">80.77（+48.6%）</span></div>
+<div class="kv"><span class="k">MACD 柱</span><span class="v hl-green">+1.510（前值 2.106，連 5 棒收縮）</span></div>
+<div class="kv"><span class="k">RSI(14)</span><span class="v">61.5（偏高未超買）</span></div>
+<div class="kv"><span class="k">ATR(14)</span><span class="v">$6.075（5.06%）</span></div>
+<div class="kv"><span class="k">成交量</span><span class="v">103.56M / 20日均 109.25M（0.95×）</span></div>
+<div class="kv"><span class="k">近5日 / 20日</span><span class="v hl-green">−5.80% / +33.26%</span></div>
+<div class="kv"><span class="k">近120日 / 250日</span><span class="v hl-green">+92.37% / +221.72%</span></div>
+<div class="kv"><span class="k">年初至今</span><span class="v hl-green">+204.72%</span></div>
+<div class="kv"><span class="k">52週區間位置</span><span class="v">81%（距高 −15.7%）</span></div></div>
+      <div class="ta-verdict"><b>TA 模型：Underweight（低配／逢反彈減倉）</b>· 目標 $106.0 · 時間窗 3–6 個月；交易員 Action Sell、$125–130 分批減、<b>不在 $120 上方新建多頭</b>、跌破 $102–106 失效線後殘餘多頭降至零。TA 與本方評分方向一致（唔追高、逢反彈減磅），惟 TA 更進取、直接給出減持評級。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">十守則評分</div>
+      <div class="scorecard"><div class="kv"><span class="k">守則零</span><span class="v">🟡 週期性（AI 資本開支受惠，代工仍虧損未證）</span></div>
+<div class="kv"><span class="k">守則一/二 量價</span><span class="v">🟢 日／週線一致向上、動能未破</span></div>
+<div class="kv"><span class="k">守則三 估值</span><span class="v">🔴 PB 高於行業、預期 PE 58x、TTM 虧損</span></div>
+<div class="kv"><span class="k">守則六/七 資金</span><span class="v">🟢 主力淨流入 +$2.76M（大單 +$2.34M）</span></div>
+<div class="kv"><span class="k">守則九/十 質素</span><span class="v">🔴 淨利 −$11.29B、ROE −12.2%、評級集中持有</span></div>
+<div class="kv"><span class="k">綜合</span><span class="v">52 分 · 🟡 中性觀望</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">操作價位</div>
+      <div class="levels"><div class="lv"><span class="lv-k">入場</span><span class="lv-v">不建議現價新建倉</span><span class="lv-n">距分析師目標 −3.0%</span></div>
+<div class="lv"><span class="lv-k">減磅</span><span class="lv-v">$125–130</span><span class="lv-n">持有者反彈分段減（TA Sell）</span></div>
+<div class="lv"><span class="lv-k">失效</span><span class="lv-v">$102</span><span class="lv-n">收市跌穿即趨勢轉弱</span></div>
+<div class="lv"><span class="lv-k">盈虧比</span><span class="lv-v">−0.2 : 1</span><span class="lv-n">風險 $18 / 回報 −$3.6</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">行業 / 板塊</div>
+      <div class="industry"><b>資訊科技 · 半導體</b>。x86 CPU 龍頭＋代工（Foundry）轉型，18A／14A 製程與政府入股為關鍵變數。守則零：<b>🟡 週期性</b> —— 短線受惠 AI 資本開支週期，但代工業務仍處虧損、結構性盈利能力未證實。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">催化劑</div>
+      <div class="catalyst"><div class="cat-item"><span class="cat-date">10月下旬</span><span class="cat-text">Q3 財報（代工虧損收窄幅度、18A 良率、政府入股進展）</span></div>
+<div class="cat-item"><span class="cat-date">持續</span><span class="cat-text">18A / 14A 外部客戶落地；與大型雲商 / 政府合作訂單</span></div>
+<div class="cat-item"><span class="cat-date">持續</span><span class="cat-text">AI PC 換機週期、伺服器 CPU 市佔變化</span></div>
+<div class="cat-item"><span class="cat-date">風險</span><span class="cat-text">代工訂單流失、資本開支失控、AI PC 需求遜預期</span></div></div>
+    </div>
+    <div class="section"><div class="section-label">K線圖</div><img class="kline-img" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/INTC_kline.png" alt="INTC.US K線"></div>
+    <div class="judgment">20 日 +33%、年內 +205%，動能屬三隻最強，但<b>估值與基本面嚴重背馳</b> —— TTM 仍虧損、P/B 6.85x 高於行業中位、分析師目標價 $116.37 已被現價 $120 升穿，53 家券商中 32 家只給「持有」。綜合 <b>52 分 · 🟡 中性觀望</b>，具體含義 = <b>不新建倉、持有者反彈減磅</b>；<b>🟡 短期（1–4 週）</b>動能未破但賠率已是負值（R:R −0.2）、<b>🟢 中長線</b>須見代工轉盈方有重估空間。收市跌穿 $102 視為趨勢轉弱。</div>
+  </div>
+</div>
+</div>
+
+<div class="page-footer">本報告為<b>方德睇市客戶會議決策版</b>，僅供參考，<b>不構成任何投資建議或要約</b>。價格可升可跌，過往表現不代表將來表現。個股評分／標籤按方德十守則框架機械得出，數據截至 2026-10-01 美股收市（延遲 15–20 分鐘）。⚠️ 本報告色語義採國際慣例：<b>升＝綠、跌＝紅</b>（與本地部分平台相反）。投資涉及風險，請自行評估並諮詢持牌顧問。</div>
+
+</body>
+</html>
