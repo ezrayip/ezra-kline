@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L3 多股分析 · COHR / TSEM / NBIS（AI 硬件供應鏈）</title>
+<style>
+  :root {
+    --bg:        #f4f6f9;
+    --card-bg:   #ffffff;
+    --text:      #1a2230;
+    --text-2:    #475569;
+    --text-3:    #94a3b8;
+    --border:    #e6eaf0;
+    --border-2:  #f1f4f8;
+    --shadow-sm: 0 1px 3px rgba(15,23,42,.05);
+    --shadow-md: 0 8px 28px rgba(15,23,42,.09), 0 2px 6px rgba(15,23,42,.04);
+    --red:       #dc2626;
+    --red-bg:    #fef2f3;
+    --red-tag:   #fde8ec;
+    --green:     #15803d;
+    --green-bg:  #f0faf4;
+    --green-tag: #dcfce7;
+    --amber:     #c2410c;
+    --amber-bg:  #fffaf2;
+    --amber-tag: #fef3c7;
+    --slate-tag: #f1f5f9;
+    --radius:    14px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang HK", "Noto Sans HK", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 32px 36px 40px; max-width: 1280px; margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* HEADER */
+  .page-header { margin-bottom: 22px; display:flex; align-items:flex-end; justify-content:space-between;
+    padding-bottom: 18px; border-bottom: 2px solid var(--border); }
+  .page-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.3px; }
+  .page-header .sub { font-size: .8rem; color: var(--text-3); margin-top: 6px; font-weight: 500; }
+  .page-header .date { font-size: .82rem; color: var(--text-3); font-weight: 500; text-align: right; }
+
+  /* CROSS-COMPARE TABLE */
+  .cross-wrap { background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; margin-bottom: 26px; box-shadow: var(--shadow-sm); }
+  .cross-title { font-size: .82rem; font-weight: 700; color: var(--text); letter-spacing: .5px;
+    margin-bottom: 12px; display:flex; align-items:center; gap:8px; }
+  .cross-title::before { content:""; width:4px; height:16px; background: var(--green); border-radius:2px; }
+  table.cross { width: 100%; border-collapse: collapse; font-size: .78rem; }
+  table.cross th { text-align: left; color: var(--text-3); font-weight: 700; font-size: .68rem;
+    letter-spacing: .8px; text-transform: uppercase; padding: 8px 10px; border-bottom: 2px solid var(--border); }
+  table.cross td { padding: 10px; border-bottom: 1px solid var(--border-2); color: var(--text-2); vertical-align: top; }
+  table.cross tr:last-child td { border-bottom: none; }
+  table.cross .c-ticker { font-weight: 700; color: var(--text); }
+  table.cross .c-name { font-size: .68rem; color: var(--text-3); }
+  table.cross .c-rank { font-size: 1.1rem; }
+  .pill { display:inline-block; padding: 2px 9px; border-radius: 20px; font-size: .68rem; font-weight: 700; white-space:nowrap; }
+  .pill-red { background: var(--red-tag); color: var(--red); }
+  .pill-green { background: var(--green-tag); color: var(--green); }
+  .pill-amber { background: var(--amber-tag); color: var(--amber); }
+  .pill-slate { background: var(--slate-tag); color: #64748b; }
+
+  /* GRID */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
+
+  /* CARD */
+  .card { position: relative; background: var(--card-bg); border-radius: var(--radius);
+    box-shadow: var(--shadow-sm); overflow: hidden; transition: box-shadow .25s, transform .2s; display: flex; }
+  .card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+  .card-accent { width: 4px; flex-shrink: 0; background: var(--border); transition: background .3s; }
+  .card.bullish  .card-accent { background: var(--green); }   /* B52: 看好=綠 */
+  .card.bearish  .card-accent { background: var(--red); }     /* B52: 看淡=紅 */
+  .card.neutral  .card-accent { background: var(--amber); }
+  .card-body { flex: 1; padding: 20px 22px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .ticker { font-size: 1rem; font-weight: 700; letter-spacing: .3px; line-height: 1.2; }
+  .stock-name { font-size: .74rem; color: var(--text-3); margin-top: 3px; }
+  .price-block { text-align: right; flex-shrink: 0; }
+  .price { font-size: 1.55rem; font-weight: 700; letter-spacing: -.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .price .ccy { font-size: .82rem; font-weight: 600; color: var(--text-3); margin-right: 1px; }
+  .change { display:inline-flex; align-items:center; gap:2px; font-size:.78rem; font-weight:600;
+    padding:3px 9px; border-radius:5px; margin-top:5px; font-variant-numeric: tabular-nums; }
+  .change.up { color: var(--green); background: var(--green-bg); }   /* B52: 升=綠 */
+  .change.down { color: var(--red); background: var(--red-bg); }     /* B52: 跌=紅 */
+  .change.flat { color: var(--text-3); background: #f8fafc; }
+  .arrow { font-size: .7rem; }
+
+  .card-rank { font-size: 1.3rem; line-height: 1; margin-top: -4px; }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { display:inline-block; padding:3px 11px; border-radius:20px; font-size:.7rem; font-weight:600;
+    letter-spacing:.2px; line-height:1.4; white-space:nowrap; }
+  .tag-red { background: var(--red-tag); color: var(--red); }
+  .tag-green { background: var(--green-tag); color: var(--green); }
+  .tag-amber { background: var(--amber-tag); color: var(--amber); }
+  .tag-slate { background: var(--slate-tag); color: #64748b; }
+  .tag-score { background: #1a2230; color: #fff; font-variant-numeric: tabular-nums; }
+  .tag-halt { background: #e2e8f0; color: #475569; border: 1px dashed #94a3b8; }
+
+  /* cap-level badge（市值層級：大/中/細/超細/停牌）— 見客決策必須顯示 */
+  .cap-badge { display:inline-block; font-size:.62rem; font-weight:700; padding:1px 7px; border-radius:5px; margin-top:5px; letter-spacing:.5px; }
+  .cap-large   { background:#ede9fe; color:#6d28d9; }
+  .cap-mid     { background:#dbeafe; color:#1d4ed8; }
+  .cap-small   { background:#fee2e2; color:#b91c1c; }
+  .cap-micro   { background:#fde8e8; color:#991b1b; border:1px solid #f4a3a3; }  /* 超細/仙股/殼股 */
+  .cap-suspended { background:#e2e8f0; color:#475569; border:1px dashed #94a3b8; }
+  .price.penny { color:#b91c1c; }                                   /* 仙股 <$0.1 紅字警示 */
+  .change.halt { color:#475569; background:#e2e8f0; }               /* 停牌 */
+  .card.suspended .card-accent { background:#94a3b8; }
+  .card.suspended .range-fill { background:#94a3b8; }
+  .card.suspended .judgment { border-left-color:#94a3b8; background:#f1f5f9; }
+
+  .section { border-top: 1px solid var(--border-2); padding-top: 12px; }
+  .section-label { font-size:.68rem; font-weight:700; color:var(--text-3); letter-spacing:1.5px;
+    text-transform: uppercase; margin-bottom: 9px; }
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 18px; }
+  .kv { display:flex; justify-content:space-between; align-items:baseline; font-size:.76rem; line-height:1.7; }
+  .kv .k { color: var(--text-3); flex-shrink:0; }
+  .kv .v { color: var(--text-2); font-weight:600; text-align:right; font-variant-numeric: tabular-nums; margin-left:8px; }
+  .kv .v.hl-red { color: var(--red); }
+  .kv .v.hl-green { color: var(--green); }
+
+  .range-track { position:relative; height:6px; background:linear-gradient(90deg,#e2e8f0,#cbd5e1);
+    border-radius:4px; margin:4px 0 8px; }
+  .range-fill { position:absolute; left:0; top:0; bottom:0; background:var(--text-3); border-radius:4px; opacity:.35; }
+  .card.bullish .range-fill { background: var(--green); }
+  .card.bearish .range-fill { background: var(--red); }
+  .card.neutral .range-fill { background: var(--amber); }
+  .range-dot { position:absolute; top:50%; width:12px; height:12px; background:#fff; border:3px solid var(--text-2);
+    border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 1px 3px rgba(0,0,0,.2); }
+  .range-ends { display:flex; justify-content:space-between; font-size:.68rem; color:var(--text-3); font-variant-numeric: tabular-nums; }
+  .range-pct { font-weight:700; color:var(--text-2); }
+
+  .ta-verdict { font-size:.74rem; color:var(--text-2); margin-top:8px; padding:7px 10px; background:var(--border-2);
+    border-radius:var(--radius-sm); line-height:1.5; }
+  .ta-verdict b { color: var(--text); }
+
+  .scorecard .kv { font-size: .74rem; }
+
+  .levels { display:flex; flex-direction:column; gap:7px; }
+  .lv { display:grid; grid-template-columns: 52px 1fr auto; align-items:baseline; gap:8px; font-size:.74rem; }
+  .lv-k { font-weight:700; color:var(--text-3); flex-shrink:0; }
+  .lv-v { font-weight:700; color:var(--text); font-variant-numeric: tabular-nums; }
+  .lv-n { font-size:.68rem; color:var(--text-3); text-align:right; }
+
+  .industry { font-size:.76rem; color:var(--text-2); line-height:1.55; }
+  .industry b { color:var(--text); font-weight:600; }
+
+  .catalyst { display:flex; flex-direction:column; gap:7px; }
+  .cat-item { display:flex; align-items:baseline; gap:9px; font-size:.74rem; line-height:1.45; }
+  .cat-date { flex-shrink:0; font-weight:700; font-size:.68rem; color:var(--text-2); background:var(--border-2);
+    padding:2px 7px; border-radius:4px; font-variant-numeric: tabular-nums; min-width:42px; text-align:center; }
+  .cat-text { color:var(--text-2); }
+
+  .judgment { font-size:.78rem; color:var(--text-2); line-height:1.6; padding:12px 14px; background:#fafbfc;
+    border-radius:var(--radius-sm); border-left:3px solid var(--border); }
+  .card.bullish .judgment { border-left-color:var(--green); background:var(--green-bg); }
+  .card.bearish .judgment { border-left-color:var(--red); background:var(--red-bg); }
+  .card.neutral .judgment { border-left-color:var(--amber); background:var(--amber-bg); }
+  .judgment b { color:var(--text); font-weight:600; }
+
+  .kline-img { width:100%; display:block; border-radius: var(--radius-sm); border:1px solid var(--border); background:#fff; }
+
+  .page-footer { margin-top:30px; text-align:center; font-size:.7rem; color:var(--text-3); line-height:1.8; padding:14px 0; }
+
+  @media print {
+    body { background:#fff; padding:18px; max-width:none; }
+    .card, .cross-wrap { box-shadow:none; border:1px solid var(--border); break-inside:avoid; }
+    .card:hover { box-shadow:none; transform:none; }
+  }
+  @media (max-width: 920px) {
+    .grid { grid-template-columns: 1fr; }
+    body { padding:16px; }
+    .page-header { flex-direction:column; align-items:flex-start; gap:6px; }
+    .page-header .date { text-align:left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <h1>L3 多股分析 · COHR / TSEM / NBIS（AI 硬件供應鏈）</h1>
+    <div class="sub">客戶會議決策版 · L3 多股深度分析（每只完整 TA + 十守則 + 操作價位）</div>
+  </div>
+  <span class="date">2026-10-07（美東 10-06 收市）</span>
+</div>
+
+<div class="cross-wrap">
+  <div class="cross-title">跨股比較 · 見客決策核心</div>
+  <table class="cross">
+<tr><th>標的</th><th>評分</th><th>標籤</th><th>相對吸引力</th><th>入場優先級</th><th>資金分配（相對）</th><th>守則零</th><th>模型中線裁決</th><th>關鍵風險</th></tr>
+<tr><td><span class="c-ticker">COHR</span><div class="c-name">Coherent</div></td><td><b>74</b></td><td><span class="pill pill-amber">中性偏多</span></td><td><span class="c-rank">🥇</span> 動能續強＋盈利拐點已兌現</td><td>中（現價 $331–341 分批，不追高於 $341）</td><td>60%</td><td><span class="pill pill-green">🟢 增長</span></td><td><span class="pill pill-green">Overweight · PT $412</span></td><td>估值隱含高增長（PE 80.9x）；FCF 負、內部人賣</td></tr>
+<tr><td><span class="c-ticker">TSEM</span><div class="c-name">Tower Semiconductor</div></td><td><b>67</b></td><td><span class="pill pill-amber">中性偏多</span></td><td><span class="c-rank">🥈</span> 盈利修訂三隻最強，但估值最貴</td><td>低（不追高；候回吐 $238–240 縮量再研究）</td><td>40%</td><td><span class="pill pill-green">🟢 增長</span></td><td><span class="pill pill-red">Underweight · PT $313</span></td><td>PE 98.6x、5 年 98% 分位；內部人 38 賣 0 買</td></tr>
+<tr><td><span class="c-ticker">NBIS</span><div class="c-name">Nebius Group</div></td><td><b>52</b></td><td><span class="pill pill-amber">中性觀望</span></td><td><span class="c-rank">🥉</span> 故事最性感，但盈利預測向下</td><td>最低（模型裁決 Sell，不落注；有貨反彈減持）</td><td>0%</td><td><span class="pill pill-green">🟢 增長</span></td><td><span class="pill pill-red">Sell · PT $283</span></td><td>EPS 3M 修訂 −54.6%；虧損擴大、現金流缺口、沽空 17%</td></tr>
+</table>
+</div>
+
+<div class="grid">
+  <div class="card bullish">
+  <div class="card-accent"></div>
+  <div class="card-body">
+    <div class="card-top">
+      <div class="ticker-block">
+        <div class="ticker">COHR.US</div>
+        <div class="stock-name">Coherent Corp.｜光通信 · 激光/EML</div>
+        <span class="cap-badge cap-large">大型</span>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="ccy">$</span>338.36</div>
+        <div class="change up"><span class="arrow">▲</span>+1.41%</div>
+      </div>
+    </div>
+    <div class="card-rank">🥇</div>
+    <div class="card-tags"><span class="tag tag-amber">74 分 · 中性偏多（收集區）</span><span class="tag tag-green">EPS 3M +26.0%</span></div>
+    <div class="section">
+      <div class="section-label">估值</div>
+      <div class="metric-grid"><div class="kv"><span class="k">PE (TTM)</span><span class="v hl-red">80.9x</span></div>
+<div class="kv"><span class="k">前瞻 PE</span><span class="v">24.1x</span></div>
+<div class="kv"><span class="k">PB</span><span class="v">6.07x</span></div>
+<div class="kv"><span class="k">市值</span><span class="v">$662 億</span></div>
+<div class="kv"><span class="k">EPS 3M 修訂</span><span class="v hl-green">+26.0%</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">52週區間</div>
+      <div class="range-track"><div class="range-fill" style="width:72.1%"></div><div class="range-dot" style="left:72.1%"></div></div><div class="range-ends"><span>109.37</span><span class="range-pct">距低 +209.4% · 距高 −20.7%</span><span>426.89</span></div>
+    </div>
+    <div class="section">
+      <div class="section-label">技術</div>
+      <div class="metric-grid"><div class="kv"><span class="k">MA20</span><span class="v hl-green">302.63</span></div>
+<div class="kv"><span class="k">MA50</span><span class="v hl-green">299.39</span></div>
+<div class="kv"><span class="k">MA200</span><span class="v hl-green">290.65</span></div>
+<div class="kv"><span class="k">MACD 柱</span><span class="v hl-green">+10.6 擴張</span></div>
+<div class="kv"><span class="k">RSI (14)</span><span class="v">60.7</span></div>
+<div class="kv"><span class="k">ATR (14)</span><span class="v">20.25（6.0%）</span></div></div>
+      <div class="ta-verdict">🧠 深度模型裁決：Overweight（中期偏多，非 Buy）。盈利拐點＋趨勢完整，但 FCF −10.3 億、存貨 +79.5%、內部人 90 日零買入，屬「低容錯」——分批、嚴止蝕、不加槓桿。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">十守則評分</div>
+      <div class="scorecard"><div class="kv"><span class="k">守則零</span><span class="v">🟢 光互連/激光結構增長</span></div>
+<div class="kv"><span class="k">量價結構</span><span class="v">🟢 多頭排列 · MACD 擴張 · 20d +12.1%</span></div>
+<div class="kv"><span class="k">盈利動能</span><span class="v">🟢 EPS 3M +26.0%（過 +20% 門檻）</span></div>
+<div class="kv"><span class="k">估值</span><span class="v">🔴 PE 80.9x · 5 年 96% 分位</span></div>
+<div class="kv"><span class="k">風險調整</span><span class="v">🔴 Sharpe 0.81（最低）· beta 2.49（最高）</span></div>
+<div class="kv"><span class="k">深度模型</span><span class="v">🟢 Overweight（回調後吸納）</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">操作價位</div>
+      <div class="levels"><div class="lv"><span class="lv-k">入場</span><span class="lv-v">$331 – $341</span><span class="lv-n">即市區間（不追高於 $341）</span></div>
+<div class="lv"><span class="lv-k">目標</span><span class="lv-v">$412</span><span class="lv-n">分析師共識（+21.9%）</span></div>
+<div class="lv"><span class="lv-k">止蝕</span><span class="lv-v">$297</span><span class="lv-n">−12.2%（≥ 2×ATR）</span></div>
+<div class="lv"><span class="lv-k">加注</span><span class="lv-v">破 $343 放量</span><span class="lv-n">收市站穩＋政策/上修</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">行業 / 板塊</div>
+      <div class="industry">AI 數據中心光互連；InP 激光 / EML 為 800G–1.6T 光模組核心瓶頸環節，毛利率最高。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">催化劑</div>
+      <div class="catalyst"><div class="cat-item"><span class="cat-date">10-01</span><span class="cat-text">Bernstein 首覆 Outperform · PT $350</span></div>
+<div class="cat-item"><span class="cat-date">10-02</span><span class="cat-text">大摩：FCC 3.2T 光模組政策最快 10 月出台</span></div>
+<div class="cat-item"><span class="cat-date">FY26 Q4</span><span class="cat-text">收入 $2.05B（+34% YoY）；FY27 訂單近排滿</span></div>
+<div class="cat-item"><span class="cat-date">11 月初</span><span class="cat-text">FY27 Q1 業績（待確認）</span></div></div>
+    </div>
+    <div class="section"><div class="section-label">K線圖</div><img class="kline-img" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/COHR_kline.png" alt="COHR.US K線"></div>
+    <div class="judgment">🟡 短期（1–4 週）：技術續強、站上 $343 才確認突破；$331–341 小注試，嚴守 $297。🟢 中長線（季以上）：激光/EML 瓶頸＋行業龍頭支撐，但估值已隱含高增長、Sharpe 最低，注碼要控制。</div>
+  </div>
+</div>
+<div class="card bullish">
+  <div class="card-accent"></div>
+  <div class="card-body">
+    <div class="card-top">
+      <div class="ticker-block">
+        <div class="ticker">TSEM.US</div>
+        <div class="stock-name">Tower Semiconductor｜矽光子代工</div>
+        <span class="cap-badge cap-large">大型</span>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="ccy">$</span>258.41</div>
+        <div class="change up"><span class="arrow">▲</span>+3.54%</div>
+      </div>
+    </div>
+    <div class="card-rank">🥈</div>
+    <div class="card-tags"><span class="tag tag-amber">67 分 · 中性偏多（收集區）</span><span class="tag tag-green">EPS 3M +35.7%</span></div>
+    <div class="section">
+      <div class="section-label">估值</div>
+      <div class="metric-grid"><div class="kv"><span class="k">PE (TTM)</span><span class="v hl-red">98.6x</span></div>
+<div class="kv"><span class="k">前瞻 PE</span><span class="v">38.5x</span></div>
+<div class="kv"><span class="k">PB</span><span class="v">9.46x</span></div>
+<div class="kv"><span class="k">市值</span><span class="v">$292 億</span></div>
+<div class="kv"><span class="k">EPS 3M 修訂</span><span class="v hl-green">+35.7%</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">52週區間</div>
+      <div class="range-track"><div class="range-fill" style="width:76.2%"></div><div class="range-dot" style="left:76.2%"></div></div><div class="range-ends"><span>71.11</span><span class="range-pct">距低 +263.4% · 距高 −18.4%</span><span>316.85</span></div>
+    </div>
+    <div class="section">
+      <div class="section-label">技術</div>
+      <div class="metric-grid"><div class="kv"><span class="k">MA20</span><span class="v hl-green">224.71</span></div>
+<div class="kv"><span class="k">MA50</span><span class="v hl-red">225.36</span></div>
+<div class="kv"><span class="k">MA200</span><span class="v hl-green">198.09</span></div>
+<div class="kv"><span class="k">MACD 柱</span><span class="v hl-green">+8.3 擴張</span></div>
+<div class="kv"><span class="k">RSI (14)</span><span class="v">63.6</span></div>
+<div class="kv"><span class="k">ATR (14)</span><span class="v">13.62（5.3%）</span></div></div>
+      <div class="ta-verdict">🧠 深度模型裁決：Underweight（減持/低配，非清倉、非做空）。基本面與趨勢未破壞，但現價已把完美預期計入：向上到 $259.65 僅 +0.5%、$268.93 僅 +4%；PE 98.6x 全靠 Forward EPS +156% 支撐。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">十守則評分</div>
+      <div class="scorecard"><div class="kv"><span class="k">守則零</span><span class="v">🟢 矽光子代工結構增長</span></div>
+<div class="kv"><span class="k">量價結構</span><span class="v">🟢 多頭排列 · 但 15 日 +35% 過熱、長上影</span></div>
+<div class="kv"><span class="k">盈利動能</span><span class="v">🟢 EPS 3M +35.7%（三者最強）</span></div>
+<div class="kv"><span class="k">估值</span><span class="v">🔴 PE 98.6x · 5 年 98% 分位（最貴）</span></div>
+<div class="kv"><span class="k">風險調整</span><span class="v">🟡 Sharpe 1.02 · beta 1.50</span></div>
+<div class="kv"><span class="k">深度模型</span><span class="v">🔴 Underweight（反抽減持）</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">操作價位</div>
+      <div class="levels"><div class="lv"><span class="lv-k">入場</span><span class="lv-v">不追高</span><span class="lv-n">模型裁決 Underweight；候回吐 $238–240 縮量再研究</span></div>
+<div class="lv"><span class="lv-k">目標</span><span class="lv-v">$313</span><span class="lv-n">分析師共識（+21.1%）</span></div>
+<div class="lv"><span class="lv-k">止蝕</span><span class="lv-v">$225</span><span class="lv-n">−12.9%（≥ 2×ATR，貼 MA50）</span></div>
+<div class="lv"><span class="lv-k">失效位</span><span class="lv-v">$268.93</span><span class="lv-n">放量收破則重估</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">行業 / 板塊</div>
+      <div class="industry">矽光子（silicon photonics）代工；1.6T/6.4T 光互連關鍵環節，市場 $1.3B(2025)→$8.5B(2029)。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">催化劑</div>
+      <div class="catalyst"><div class="cat-item"><span class="cat-date">10-01</span><span class="cat-text">三行首覆：Mizuho $300 / Barclays $310 / BofA $367</span></div>
+<div class="cat-item"><span class="cat-date">09-27</span><span class="cat-text">納入 PHLX 半導體指數（被動流入）</span></div>
+<div class="cat-item"><span class="cat-date">FY27–29</span><span class="cat-text">日本 $40 億擴產（獲 METI 約 $10 億補貼）</span></div>
+<div class="cat-item"><span class="cat-date">11 月初</span><span class="cat-text">Q3 業績（待確認）</span></div></div>
+    </div>
+    <div class="section"><div class="section-label">K線圖</div><img class="kline-img" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/TSEM_kline.png" alt="TSEM.US K線"></div>
+    <div class="judgment">🟡 短期（1–4 週）：連升後長上影、貼布林上軌，賠率不利——不追高，有貨反抽 $259–269 減磅。🟡 中長線（季以上）：矽光子代工龍頭地位真，但估值透支、內部人 6 個月 38 賣 0 買；候 $231–238 縮量止穩再小注試。</div>
+  </div>
+</div>
+<div class="card neutral">
+  <div class="card-accent"></div>
+  <div class="card-body">
+    <div class="card-top">
+      <div class="ticker-block">
+        <div class="ticker">NBIS.US</div>
+        <div class="stock-name">Nebius Group｜AI neocloud / GPU 雲</div>
+        <span class="cap-badge cap-large">大型</span>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="ccy">$</span>249.87</div>
+        <div class="change up"><span class="arrow">▲</span>+7.44%</div>
+      </div>
+    </div>
+    <div class="card-rank">🥉</div>
+    <div class="card-tags"><span class="tag tag-amber">52 分 · 中性觀望</span><span class="tag tag-red">EPS 3M −54.6%</span></div>
+    <div class="section">
+      <div class="section-label">估值</div>
+      <div class="metric-grid"><div class="kv"><span class="k">PE (TTM)</span><span class="v hl-red">181.1x</span></div>
+<div class="kv"><span class="k">前瞻 PE</span><span class="v hl-red">虧損（NA）</span></div>
+<div class="kv"><span class="k">PB</span><span class="v">6.62x</span></div>
+<div class="kv"><span class="k">市值</span><span class="v">$679 億</span></div>
+<div class="kv"><span class="k">EPS 3M 修訂</span><span class="v hl-red">−54.6%</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">52週區間</div>
+      <div class="range-track"><div class="range-fill" style="width:82.7%"></div><div class="range-dot" style="left:82.7%"></div></div><div class="range-ends"><span>73.87</span><span class="range-pct">距低 +238.2% · 距高 −12.8%</span><span>286.69</span></div>
+    </div>
+    <div class="section">
+      <div class="section-label">技術</div>
+      <div class="metric-grid"><div class="kv"><span class="k">MA20</span><span class="v hl-green">230.12</span></div>
+<div class="kv"><span class="k">MA50</span><span class="v hl-green">220.99</span></div>
+<div class="kv"><span class="k">MA200</span><span class="v hl-green">169.37</span></div>
+<div class="kv"><span class="k">MACD 柱</span><span class="v hl-green">+2.5 剛擴張</span></div>
+<div class="kv"><span class="k">RSI (14)</span><span class="v">58.7</span></div>
+<div class="kv"><span class="k">ATR (14)</span><span class="v">16.40（6.6%）</span></div></div>
+      <div class="ta-verdict">🧠 深度模型裁決：Sell。成長真確（Q2 收入 +454%、毛利率 77%），但營業虧損擴大至 −1.76 億、TTM FCF ~−96 億、總債務一年 +731%、股數 YoY +13.4%；極端估值已透支已知亮點，內部人全數賣出。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">十守則評分</div>
+      <div class="scorecard"><div class="kv"><span class="k">守則零</span><span class="v">🟢 AI 算力/neocloud 結構增長</span></div>
+<div class="kv"><span class="k">量價結構</span><span class="v">🟡 多頭排列 · 20d 僅 +2.5%（最落後）</span></div>
+<div class="kv"><span class="k">盈利動能</span><span class="v">🔴 EPS 3M −54.6%（封頂中性觀望）</span></div>
+<div class="kv"><span class="k">估值</span><span class="v">🔴 PE 181x · P/S ~50x · 5 年 96% 分位</span></div>
+<div class="kv"><span class="k">風險調整</span><span class="v">🟡 Sharpe 1.66 · 波動 113% · beta 2.92</span></div>
+<div class="kv"><span class="k">深度模型</span><span class="v">🔴 Sell（估值/現金流透支）</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">操作價位</div>
+      <div class="levels"><div class="lv"><span class="lv-k">入場</span><span class="lv-v">不落注</span><span class="lv-n">模型裁決 Sell；有貨反彈 $253–255 減持</span></div>
+<div class="lv"><span class="lv-k">目標</span><span class="lv-v">$283</span><span class="lv-n">分析師共識（+13.1%，離差 115% 高分歧）</span></div>
+<div class="lv"><span class="lv-k">止蝕</span><span class="lv-v">—</span><span class="lv-n">無建議倉位</span></div>
+<div class="lv"><span class="lv-k">失效位</span><span class="lv-v">$255.10</span><span class="lv-n">連 2–3 日收破＋量能確認才重估</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">行業 / 板塊</div>
+      <div class="industry">AI neocloud / GPU 雲租算力；Q2 收入 $582.3M（+454% YoY）、adj EBITDA ~50%。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">催化劑</div>
+      <div class="catalyst"><div class="cat-item"><span class="cat-date">10-01</span><span class="cat-text">GPU 加價 17–21%（三個月內第二次）</span></div>
+<div class="cat-item"><span class="cat-date">10-04</span><span class="cat-text">收購 Inferize（推理平台）</span></div>
+<div class="cat-item"><span class="cat-date">—</span><span class="cat-text">BNP 上調 Outperform · PT $399</span></div>
+<div class="cat-item"><span class="cat-date">11 月中</span><span class="cat-text">Q3 業績（待確認）</span></div></div>
+    </div>
+    <div class="section"><div class="section-label">K線圖</div><img class="kline-img" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/NBIS_kline.png" alt="NBIS.US K線"></div>
+    <div class="judgment">🟡 短期（1–4 週）：$253–255 屬潛在派發區，不追高；有貨反彈減持。🔴 中長線（季以上）：需 Q3 收入 QoQ ≥40%、毛利率 ~77%、FCF 改善、內部人轉買，才可重估；否則維持 Sell。</div>
+  </div>
+</div>
+</div>
+
+<div class="page-footer">數據來源：Longbridge OpenAPI（報價/估值/共識/內部人/沽空/資金）、yfinance（K線/四維）、Futu、WebSearch（行業脈搏）；TA = 多智能體深度辯論。本報告為內部研究用途。⚠️ 以上僅供參考，不構成投資建議。價格可升可跌，過往表現不代表將來表現，請自行評估。</div>
+
+</body>
+</html>
