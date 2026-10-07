@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L3 多股深度分析 · AAOI / AXTI（AI 光通信上游）</title>
+<style>
+  :root {
+    --bg:        #f4f6f9;
+    --card-bg:   #ffffff;
+    --text:      #1a2230;
+    --text-2:    #475569;
+    --text-3:    #94a3b8;
+    --border:    #e6eaf0;
+    --border-2:  #f1f4f8;
+    --shadow-sm: 0 1px 3px rgba(15,23,42,.05);
+    --shadow-md: 0 8px 28px rgba(15,23,42,.09), 0 2px 6px rgba(15,23,42,.04);
+    --red:       #dc2626;
+    --red-bg:    #fef2f3;
+    --red-tag:   #fde8ec;
+    --green:     #15803d;
+    --green-bg:  #f0faf4;
+    --green-tag: #dcfce7;
+    --amber:     #c2410c;
+    --amber-bg:  #fffaf2;
+    --amber-tag: #fef3c7;
+    --slate-tag: #f1f5f9;
+    --radius:    14px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang HK", "Noto Sans HK", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 32px 36px 40px; max-width: 1280px; margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* HEADER */
+  .page-header { margin-bottom: 22px; display:flex; align-items:flex-end; justify-content:space-between;
+    padding-bottom: 18px; border-bottom: 2px solid var(--border); }
+  .page-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.3px; }
+  .page-header .sub { font-size: .8rem; color: var(--text-3); margin-top: 6px; font-weight: 500; }
+  .page-header .date { font-size: .82rem; color: var(--text-3); font-weight: 500; text-align: right; }
+
+  /* CROSS-COMPARE TABLE */
+  .cross-wrap { background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; margin-bottom: 26px; box-shadow: var(--shadow-sm); }
+  .cross-title { font-size: .82rem; font-weight: 700; color: var(--text); letter-spacing: .5px;
+    margin-bottom: 12px; display:flex; align-items:center; gap:8px; }
+  .cross-title::before { content:""; width:4px; height:16px; background: var(--green); border-radius:2px; }
+  table.cross { width: 100%; border-collapse: collapse; font-size: .78rem; }
+  table.cross th { text-align: left; color: var(--text-3); font-weight: 700; font-size: .68rem;
+    letter-spacing: .8px; text-transform: uppercase; padding: 8px 10px; border-bottom: 2px solid var(--border); }
+  table.cross td { padding: 10px; border-bottom: 1px solid var(--border-2); color: var(--text-2); vertical-align: top; }
+  table.cross tr:last-child td { border-bottom: none; }
+  table.cross .c-ticker { font-weight: 700; color: var(--text); }
+  table.cross .c-name { font-size: .68rem; color: var(--text-3); }
+  table.cross .c-rank { font-size: 1.1rem; }
+  .pill { display:inline-block; padding: 2px 9px; border-radius: 20px; font-size: .68rem; font-weight: 700; white-space:nowrap; }
+  .pill-red { background: var(--red-tag); color: var(--red); }
+  .pill-green { background: var(--green-tag); color: var(--green); }
+  .pill-amber { background: var(--amber-tag); color: var(--amber); }
+  .pill-slate { background: var(--slate-tag); color: #64748b; }
+
+  /* GRID */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; align-items: start; }
+
+  /* CARD */
+  .card { position: relative; background: var(--card-bg); border-radius: var(--radius);
+    box-shadow: var(--shadow-sm); overflow: hidden; transition: box-shadow .25s, transform .2s; display: flex; }
+  .card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+  .card-accent { width: 4px; flex-shrink: 0; background: var(--border); transition: background .3s; }
+  .card.bullish  .card-accent { background: var(--green); }   /* B52: 看好=綠 */
+  .card.bearish  .card-accent { background: var(--red); }     /* B52: 看淡=紅 */
+  .card.neutral  .card-accent { background: var(--amber); }
+  .card-body { flex: 1; padding: 20px 22px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .ticker { font-size: 1rem; font-weight: 700; letter-spacing: .3px; line-height: 1.2; }
+  .stock-name { font-size: .74rem; color: var(--text-3); margin-top: 3px; }
+  .price-block { text-align: right; flex-shrink: 0; }
+  .price { font-size: 1.55rem; font-weight: 700; letter-spacing: -.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .price .ccy { font-size: .82rem; font-weight: 600; color: var(--text-3); margin-right: 1px; }
+  .change { display:inline-flex; align-items:center; gap:2px; font-size:.78rem; font-weight:600;
+    padding:3px 9px; border-radius:5px; margin-top:5px; font-variant-numeric: tabular-nums; }
+  .change.up { color: var(--green); background: var(--green-bg); }   /* B52: 升=綠 */
+  .change.down { color: var(--red); background: var(--red-bg); }     /* B52: 跌=紅 */
+  .change.flat { color: var(--text-3); background: #f8fafc; }
+  .arrow { font-size: .7rem; }
+
+  .card-rank { font-size: 1.3rem; line-height: 1; margin-top: -4px; }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { display:inline-block; padding:3px 11px; border-radius:20px; font-size:.7rem; font-weight:600;
+    letter-spacing:.2px; line-height:1.4; white-space:nowrap; }
+  .tag-red { background: var(--red-tag); color: var(--red); }
+  .tag-green { background: var(--green-tag); color: var(--green); }
+  .tag-amber { background: var(--amber-tag); color: var(--amber); }
+  .tag-slate { background: var(--slate-tag); color: #64748b; }
+  .tag-score { background: #1a2230; color: #fff; font-variant-numeric: tabular-nums; }
+  .tag-halt { background: #e2e8f0; color: #475569; border: 1px dashed #94a3b8; }
+
+  /* cap-level badge（市值層級：大/中/細/超細/停牌）— 見客決策必須顯示 */
+  .cap-badge { display:inline-block; font-size:.62rem; font-weight:700; padding:1px 7px; border-radius:5px; margin-top:5px; letter-spacing:.5px; }
+  .cap-large   { background:#ede9fe; color:#6d28d9; }
+  .cap-mid     { background:#dbeafe; color:#1d4ed8; }
+  .cap-small   { background:#fee2e2; color:#b91c1c; }
+  .cap-micro   { background:#fde8e8; color:#991b1b; border:1px solid #f4a3a3; }  /* 超細/仙股/殼股 */
+  .cap-suspended { background:#e2e8f0; color:#475569; border:1px dashed #94a3b8; }
+  .price.penny { color:#b91c1c; }                                   /* 仙股 <$0.1 紅字警示 */
+  .change.halt { color:#475569; background:#e2e8f0; }               /* 停牌 */
+  .card.suspended .card-accent { background:#94a3b8; }
+  .card.suspended .range-fill { background:#94a3b8; }
+  .card.suspended .judgment { border-left-color:#94a3b8; background:#f1f5f9; }
+
+  .section { border-top: 1px solid var(--border-2); padding-top: 12px; }
+  .section-label { font-size:.68rem; font-weight:700; color:var(--text-3); letter-spacing:1.5px;
+    text-transform: uppercase; margin-bottom: 9px; }
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 18px; }
+  .kv { display:flex; justify-content:space-between; align-items:baseline; font-size:.76rem; line-height:1.7; }
+  .kv .k { color: var(--text-3); flex-shrink:0; }
+  .kv .v { color: var(--text-2); font-weight:600; text-align:right; font-variant-numeric: tabular-nums; margin-left:8px; }
+  .kv .v.hl-red { color: var(--red); }
+  .kv .v.hl-green { color: var(--green); }
+
+  .range-track { position:relative; height:6px; background:linear-gradient(90deg,#e2e8f0,#cbd5e1);
+    border-radius:4px; margin:4px 0 8px; }
+  .range-fill { position:absolute; left:0; top:0; bottom:0; background:var(--text-3); border-radius:4px; opacity:.35; }
+  .card.bullish .range-fill { background: var(--green); }
+  .card.bearish .range-fill { background: var(--red); }
+  .card.neutral .range-fill { background: var(--amber); }
+  .range-dot { position:absolute; top:50%; width:12px; height:12px; background:#fff; border:3px solid var(--text-2);
+    border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 1px 3px rgba(0,0,0,.2); }
+  .range-ends { display:flex; justify-content:space-between; font-size:.68rem; color:var(--text-3); font-variant-numeric: tabular-nums; }
+  .range-pct { font-weight:700; color:var(--text-2); }
+
+  .ta-verdict { font-size:.74rem; color:var(--text-2); margin-top:8px; padding:7px 10px; background:var(--border-2);
+    border-radius:var(--radius-sm); line-height:1.5; }
+  .ta-verdict b { color: var(--text); }
+
+  .scorecard .kv { font-size: .74rem; }
+
+  .levels { display:flex; flex-direction:column; gap:7px; }
+  .lv { display:grid; grid-template-columns: 52px 1fr auto; align-items:baseline; gap:8px; font-size:.74rem; }
+  .lv-k { font-weight:700; color:var(--text-3); flex-shrink:0; }
+  .lv-v { font-weight:700; color:var(--text); font-variant-numeric: tabular-nums; }
+  .lv-n { font-size:.68rem; color:var(--text-3); text-align:right; }
+
+  .industry { font-size:.76rem; color:var(--text-2); line-height:1.55; }
+  .industry b { color:var(--text); font-weight:600; }
+
+  .catalyst { display:flex; flex-direction:column; gap:7px; }
+  .cat-item { display:flex; align-items:baseline; gap:9px; font-size:.74rem; line-height:1.45; }
+  .cat-date { flex-shrink:0; font-weight:700; font-size:.68rem; color:var(--text-2); background:var(--border-2);
+    padding:2px 7px; border-radius:4px; font-variant-numeric: tabular-nums; min-width:42px; text-align:center; }
+  .cat-text { color:var(--text-2); }
+
+  .judgment { font-size:.78rem; color:var(--text-2); line-height:1.6; padding:12px 14px; background:#fafbfc;
+    border-radius:var(--radius-sm); border-left:3px solid var(--border); }
+  .card.bullish .judgment { border-left-color:var(--green); background:var(--green-bg); }
+  .card.bearish .judgment { border-left-color:var(--red); background:var(--red-bg); }
+  .card.neutral .judgment { border-left-color:var(--amber); background:var(--amber-bg); }
+  .judgment b { color:var(--text); font-weight:600; }
+
+  .kline-img { width:100%; display:block; border-radius: var(--radius-sm); border:1px solid var(--border); background:#fff; }
+
+  .page-footer { margin-top:30px; text-align:center; font-size:.7rem; color:var(--text-3); line-height:1.8; padding:14px 0; }
+
+  @media print {
+    body { background:#fff; padding:18px; max-width:none; }
+    .card, .cross-wrap { box-shadow:none; border:1px solid var(--border); break-inside:avoid; }
+    .card:hover { box-shadow:none; transform:none; }
+  }
+  @media (max-width: 920px) {
+    .grid { grid-template-columns: 1fr; }
+    body { padding:16px; }
+    .page-header { flex-direction:column; align-items:flex-start; gap:6px; }
+    .page-header .date { text-align:left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <h1>L3 多股深度分析 · AAOI / AXTI（AI 光通信上游）</h1>
+    <div class="sub">客戶會議決策版 · L3 多股深度分析（每只完整 TA + 十守則 + 操作價位）</div>
+  </div>
+  <span class="date">2026-10-07（美東 10-06 收市）</span>
+</div>
+
+<div class="cross-wrap">
+  <div class="cross-title">跨股比較 · 見客決策核心</div>
+  <table class="cross">
+<tr><th>標的</th><th>評分</th><th>標籤</th><th>相對吸引力</th><th>入場優先級</th><th>資金分配（相對）</th><th>守則零</th><th>模型中線裁決</th><th>關鍵風險</th></tr>
+<tr><td><span class="c-ticker">AXTI</span><div class="c-name">AXT</div></td><td><b>63</b></td><td><span class="pill pill-amber">中性偏多</span></td><td><span class="c-rank">🥇</span> 材料樽頸最硬＋盈利轉折，但估值最貴</td><td>低（不追高；候回吐 $77–81 分注）</td><td>60%</td><td><span class="pill pill-green">🟢 增長</span></td><td><span class="pill pill-red">Underweight · PT $91.6</span></td><td>P/S 43.9x、PEG 12、5 年 97 分位；Q2 利潤 34% 屬非經營項；中國出口許可</td></tr>
+<tr><td><span class="c-ticker">AAOI</span><div class="c-name">Applied Optoelectronics</div></td><td><b>57</b></td><td><span class="pill pill-amber">中性觀望</span></td><td><span class="c-rank">🥈</span> 動能最強但盈利質素最弱</td><td>最低（模型裁決 Underweight；有貨反彈減持）</td><td>40%</td><td><span class="pill pill-green">🟢 增長</span></td><td><span class="pill pill-red">Underweight · PT $163</span></td><td>Q2 淨虧擴大、毛利率跌；上半年稀釋 6.7%、FCF 負 $6 億；5 日 +29% 極度延伸</td></tr>
+</table>
+</div>
+
+<div class="grid">
+  <div class="card bullish">
+  <div class="card-accent"></div>
+  <div class="card-body">
+    <div class="card-top">
+      <div class="ticker-block">
+        <div class="ticker">AXTI.US</div>
+        <div class="stock-name">AXT（AXT Inc.）</div>
+        <span class="cap-badge cap-small">小型 · ≈$55億</span>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="ccy">$</span>84.06</div>
+        <div class="change down"><span class="arrow">▼</span>3.00%</div>
+      </div>
+    </div>
+    <div class="card-rank">🥇</div>
+    <div class="card-tags"><span class="tag tag-score">63分</span><span class="tag tag-verd">中性偏多 · 收集區</span></div>
+    <div class="section">
+      <div class="section-label">估值</div>
+      <div class="metric-grid"><div class="kv"><span class="k">PE(TTM)</span><span class="v hl-red">2,101x（近乎無盈利）</span></div>
+<div class="kv"><span class="k">前瞻 PE</span><span class="v">37.4x</span></div>
+<div class="kv"><span class="k">PB</span><span class="v">6.1x</span></div>
+<div class="kv"><span class="k">P/S</span><span class="v hl-red">43.9x</span></div>
+<div class="kv"><span class="k">市值</span><span class="v">≈$55億</span></div>
+<div class="kv"><span class="k">息率</span><span class="v">0%</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">52週區間</div>
+      <div class="range-track"><div class="range-fill" style="width:58.5%"></div><div class="range-dot" style="left:58.5%"></div></div><div class="range-ends"><span>4.03</span><span class="range-pct">距低 +1985.9% · 距高 −40.3%</span><span>140.83</span></div>
+    </div>
+    <div class="section">
+      <div class="section-label">技術</div>
+      <div class="metric-grid"><div class="kv"><span class="k">MA20 / MA50 / MA200</span><span class="v hl-green">73.4 / 69.7 / 61.1</span></div>
+<div class="kv"><span class="k">現價 vs MA200</span><span class="v hl-red">+37.7%</span></div>
+<div class="kv"><span class="k">MACD 柱</span><span class="v">+2.82（走弱中）</span></div>
+<div class="kv"><span class="k">RSI14</span><span class="v">60.1</span></div>
+<div class="kv"><span class="k">ATR14</span><span class="v hl-red">8.0%</span></div>
+<div class="kv"><span class="k">20 日 / 60 日</span><span class="v hl-green">+20.8% / +66.6%</span></div></div>
+      <div class="ta-verdict">Underweight · 反彈至 $88–91 分批減，槓桿／裸空不建議</div>
+    </div>
+    <div class="section">
+      <div class="section-label">十守則評分</div>
+      <div class="scorecard"><div class="kv"><span class="k">守則零</span><span class="v">🟢 結構增長（InP 樽頸）</span></div>
+<div class="kv"><span class="k">量價結構</span><span class="v">🟢 多頭排列、今日低量回吐</span></div>
+<div class="kv"><span class="k">估值</span><span class="v">🔴 5 年 97 分位、PEG 12</span></div>
+<div class="kv"><span class="k">盈利質素</span><span class="v">🟢 轉盈＋共識修訂 +245%</span></div>
+<div class="kv"><span class="k">板塊語境</span><span class="v">🟢 AI 光通信需求外溢</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">操作價位</div>
+      <div class="levels"><div class="lv"><span class="lv-k">入場</span><span class="lv-v">$77–81（回吐分注）</span><span class="lv-n">近 VWMA $76.96；$81–86 小注</span></div>
+<div class="lv"><span class="lv-k">止蝕</span><span class="lv-v">$69.7（50 日線）</span><span class="lv-n">−17.0% · 2.1×ATR</span></div>
+<div class="lv"><span class="lv-k">目標 / 阻力</span><span class="lv-v">$88–91 / 突破看 $100</span><span class="lv-n">分析師均值 $91.6</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">行業 / 板塊</div>
+      <div class="industry">化合物半導體襯底 — 磷化銦（InP）上游材料，控制全球約 40% InP 供應鏈；AI 由銅轉光子，每個 EML 激光／收發器／OCS 開關皆需 InP。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">催化劑</div>
+      <div class="catalyst"><div class="cat-item"><span class="cat-date">10-06</span><span class="cat-text">與 Lumentum 簽 6 年 InP 襯底供應協議，預付 $8,700 萬（可抵貨款）</span></div>
+<div class="cat-item"><span class="cat-date">10-29</span><span class="cat-text">Q3 業績（盤後）；市場預估 EPS $0.3 / 收入 $6,600 萬</span></div>
+<div class="cat-item"><span class="cat-date">Q4</span><span class="cat-text">業界醞釀 InP 襯底再漲 10%；2 吋上半年已漲 76%</span></div></div>
+    </div>
+    <div class="section"><div class="section-label">K線圖</div><img class="kline-img" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/AXTI_kline.png" alt="AXTI.US K線"></div>
+    <div class="judgment">AI 光子「材料樽頸」最硬一環：控制全球約 40% 磷化銦供應，Q2 收入 +165% 並轉盈，Lumentum 6 年協議鎖定產能、預付 $8,700 萬，短倉由 16.8% 回落至 13.4%。但估值已反映完美預期（P/S 43.9x、PEG 12、5 年 97 分位），且 Q2 利潤約 34% 來自利息／權益法非經營項；模型中線裁決 Underweight。評分 63 屬中性偏多下緣 —— 入場只宜回吐分注（$77–81），現價 $84 唔追，Q3（10/29）屬二元事件宜控制倉位。</div>
+  </div>
+</div>
+<div class="card neutral">
+  <div class="card-accent"></div>
+  <div class="card-body">
+    <div class="card-top">
+      <div class="ticker-block">
+        <div class="ticker">AAOI.US</div>
+        <div class="stock-name">Applied Optoelectronics</div>
+        <span class="cap-badge cap-mid">中型 · ≈$110億</span>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="ccy">$</span>130.16</div>
+        <div class="change up"><span class="arrow">▲</span>7.07%</div>
+      </div>
+    </div>
+    <div class="card-rank">🥈</div>
+    <div class="card-tags"><span class="tag tag-score">57分</span><span class="tag tag-verd">中性觀望</span></div>
+    <div class="section">
+      <div class="section-label">估值</div>
+      <div class="metric-grid"><div class="kv"><span class="k">PE(TTM)</span><span class="v hl-red">n/a（虧損）</span></div>
+<div class="kv"><span class="k">前瞻 PE</span><span class="v">28.3x</span></div>
+<div class="kv"><span class="k">PB</span><span class="v">6.6x</span></div>
+<div class="kv"><span class="k">P/S</span><span class="v hl-red">18.5x</span></div>
+<div class="kv"><span class="k">市值</span><span class="v">≈$110億</span></div>
+<div class="kv"><span class="k">息率</span><span class="v">0%</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">52週區間</div>
+      <div class="range-track"><div class="range-fill" style="width:54.4%"></div><div class="range-dot" style="left:54.4%"></div></div><div class="range-ends"><span>19.49</span><span class="range-pct">距低 +567.8% · 距高 −41.7%</span><span>223.10</span></div>
+    </div>
+    <div class="section">
+      <div class="section-label">技術</div>
+      <div class="metric-grid"><div class="kv"><span class="k">MA20 / MA50 / MA200</span><span class="v hl-green">104.9 / 112.2 / 109.8</span></div>
+<div class="kv"><span class="k">現價 vs MA20</span><span class="v hl-red">+24%（極延伸）</span></div>
+<div class="kv"><span class="k">MACD 柱</span><span class="v hl-green">+7.17（擴張中）</span></div>
+<div class="kv"><span class="k">RSI14</span><span class="v">66.1</span></div>
+<div class="kv"><span class="k">ATR14</span><span class="v hl-red">6.6%</span></div>
+<div class="kv"><span class="k">5 日 / 20 日</span><span class="v hl-green">+29.3% / +16.7%</span></div></div>
+      <div class="ta-verdict">Underweight · 現價 $130–132 至少減半，跌穿 $122.75 續減，硬止蝕 $105</div>
+    </div>
+    <div class="section">
+      <div class="section-label">十守則評分</div>
+      <div class="scorecard"><div class="kv"><span class="k">守則零</span><span class="v">🟢 結構增長（800G/1.6T）</span></div>
+<div class="kv"><span class="k">量價結構</span><span class="v">🟢 放量突破、MACD 金叉</span></div>
+<div class="kv"><span class="k">估值</span><span class="v">🟡 5 年 95 分位</span></div>
+<div class="kv"><span class="k">盈利質素</span><span class="v">🔴 淨虧擴大、毛利率跌、FCF 負</span></div>
+<div class="kv"><span class="k">板塊語境</span><span class="v">🟢 AI 光通信需求外溢</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">操作價位</div>
+      <div class="levels"><div class="lv"><span class="lv-k">入場</span><span class="lv-v">觀望：現價 $130 唔追</span><span class="lv-n">回吐 $118–123 縮量才研究</span></div>
+<div class="lv"><span class="lv-k">止蝕</span><span class="lv-v">$112（MA 密集帶下沿）</span><span class="lv-n">−13.9% · 2.1×ATR</span></div>
+<div class="lv"><span class="lv-k">目標 / 阻力</span><span class="lv-v">$132 阻力牆 / 破位看 $145</span><span class="lv-n">分析師均值 $163</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-label">行業 / 板塊</div>
+      <div class="industry">光模組／激光 — 美國垂直整合收發器商（laser fab＋設計＋組裝，德州 Sugar Land）；AI 數據中心 800G／1.6T 光模組、EML 激光器。</div>
+    </div>
+    <div class="section">
+      <div class="section-label">催化劑</div>
+      <div class="catalyst"><div class="cat-item"><span class="cat-date">10-05</span><span class="cat-text">完成第 3 個 $6 億 ATM，均價 $105.36、淨籌 $5.88 億（產能擴充）</span></div>
+<div class="cat-item"><span class="cat-date">11月初</span><span class="cat-text">Q3 業績（延續 800G/1.6T 訂單、毛利率走向為關鍵）</span></div></div>
+    </div>
+    <div class="section"><div class="section-label">K線圖</div><img class="kline-img" src="https://raw.githubusercontent.com/ezrayip/ezra-kline/main/AAOI_kline.png" alt="AAOI.US K線"></div>
+    <div class="judgment">動能極強（5 日 +29.3%、放量突破、MACD 金叉擴張、Serenity 心目中「最喜愛美股光子股」），但基本質素與股價脫節：Q2 淨虧擴大 59.5%、毛利率由 30.3% 跌至 27.7%、上半年靠 $10.3 億 ATM 稀釋 6.7%、過去四季 FCF 約 −$6 億，內部人年內淨沽逾 $1 億、零買入。現價高於 200 日線 +18.6%、5 年估值 95 分位、5 日急升 29% 屬極度延伸。模型中線裁決 Underweight（反彈減持）。評分 57 中性觀望 —— 有貨 $130–132 減，未持貨等 $118–123 縮量再研究，$132 為明確阻力牆。</div>
+  </div>
+</div>
+</div>
+
+<div class="page-footer">⚠️ 以上僅供參考，不構成投資建議。價格可升可跌，請自行評估。過往表現不代表將來表現。</div>
+
+</body>
+</html>
